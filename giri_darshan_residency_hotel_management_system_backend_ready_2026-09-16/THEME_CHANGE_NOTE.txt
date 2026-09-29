@@ -1,0 +1,1 @@
+Only background colours and font styling were adjusted for Energy Usage Overview and Live Room Management to match the main Giri Darshan Residency theme. No functions, JavaScript logic, tabs, page structure, or layouts were changed.

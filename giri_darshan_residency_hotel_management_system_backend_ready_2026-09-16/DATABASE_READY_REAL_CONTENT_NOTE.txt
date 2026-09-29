@@ -1,0 +1,7 @@
+Real client content update
+
+This version uses public/customer-side hotel information from the existing Giri Darshan Residency website, including contact details, room categories, facilities, location highlights, basic description, testimonials, and image URLs.
+
+No fake customer bookings, payments, staff, invoices, room numbers, capacities, prices, or admin records were added. Unknown live values are shown as database-ready placeholders so they can later be loaded from MySQL through a backend API.
+
+Admin/staff operational content remains mainly database-ready and can be updated later when the client provides real data.

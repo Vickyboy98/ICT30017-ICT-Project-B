@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Management System</title>
+  
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Three.js for 3D -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+      }
+    }
+  </script>
+  
+  <style>
+    /* (your existing CSS – unchanged) */
+    :root {
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,0.06);
+      --text: #f5f7fb;
+      --muted: #a0a8b8;
+      --accent: #d6b36a;
+      --accent-strong: #b8964f;
+      --shadow: 0 30px 80px rgba(0,0,0,.45);
+      font-family: Inter, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #0b1220 30%, #0f2747 60%, #123a63 100%);
+      color: var(--text);
+    }
+
+    .content-vertical {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .header {
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+      letter-spacing: 1px;
+    }
+
+    .search-box {
+      max-width: 420px;
+      margin: 15px auto 0;
+      background: rgba(255,255,255,.05);
+      border-radius: 999px;
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid rgba(214,179,106,0.25);
+      backdrop-filter: blur(8px);
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+    }
+
+    /* External page links bar */
+    .external-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 15px 0 5px;
+    }
+    .external-links a {
+      background: rgba(214,179,106,0.15);
+      border: 1px solid var(--accent);
+      padding: 8px 24px;
+      border-radius: 40px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+    .external-links a:hover {
+      background: var(--accent);
+      color: #0b1220;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(214,179,106,0.3);
+      padding-bottom: 15px;
+      margin-top: 10px;
+    }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(214,179,106,0.3);
+      padding: 10px 20px;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .tab-btn:hover {
+      background: rgba(214,179,106,0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0b1220;
+      border-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .panel-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(214,179,106,0.25);
+      border-radius: 18px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: var(--accent);
+    }
+
+    .stats-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stats-item {
+      font-size: 0.95rem;
+      color: white;
+      background: rgba(0,0,0,0.3);
+      padding: 10px 15px;
+      border-radius: 12px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .stats-item strong {
+      color: var(--accent);
+      font-size: 1.2rem;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .hotel-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      width: 100%;
+    }
+
+    .room {
+      height: 110px;
+      padding: 14px;
+      border-radius: 16px;
+      color: white;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(6px);
+      transition: all 0.25s ease;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .room:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    }
+
+    .room small {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .room.free { background: linear-gradient(135deg, #1f8f5f, #145a3c); }
+    .room.checkedin { background: linear-gradient(135deg, #8c2f39, #5a1b22); }
+    .room.booked { background: linear-gradient(135deg, #1e3a5f, #12263f); }
+    .room.maintenance { background: linear-gradient(135deg, #3a3a3a, #1f1f1f); }
+    .room.extended { background: linear-gradient(135deg, #c49b3d, #8b6b2c); }
+
+    .tooltip {
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f1f25;
+      color: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      width: 210px;
+      display: none;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: #1f1f25 transparent transparent transparent;
+    }
+
+    .room:hover .tooltip {
+      display: block;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 15px;
+    }
+
+    .action-card {
+      padding: 18px;
+      font-size: 0.9rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #d6b36a, #b8964f);
+      color: #1a1a1a;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .action-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    }
+
+    .parking-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .parking-spot {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(214,179,106,0.3);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .parking-spot.available {
+      background: linear-gradient(135deg, #1f8f5f, #145a3c);
+      border-color: #2ecc71;
+    }
+
+    .parking-spot.occupied {
+      background: linear-gradient(135deg, #7a1f2b, #4a1018);
+      border-color: #e74c3c;
+    }
+
+    .parking-spot:hover {
+      transform: translateY(-3px);
+    }
+
+    .staff-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .staff-table th,
+    .staff-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .staff-table th {
+      background: rgba(214,179,106,0.2);
+      color: var(--accent);
+    }
+
+    .booking-form {
+      display: grid;
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .booking-form input,
+    .booking-form select {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(214,179,106,0.3);
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 14px;
+    }
+
+    .booking-form input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .booking-form button {
+      background: var(--accent);
+      color: #0b1220;
+      font-weight: bold;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .revenue-chart {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    .payment-card {
+      background: linear-gradient(135deg, #1e3a5f, #0f2747);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .invoice-item {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    .security-log {
+      background: rgba(0,0,0,0.3);
+      border-left: 3px solid var(--accent);
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: #0f172a;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      border: 1px solid var(--accent);
+    }
+
+    .modal-content h3 {
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 550px;
+      background: linear-gradient(135deg, #0b1220, #1a2a3a);
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    @media (max-width: 1000px) {
+      .hotel-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .action-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .stats-grid {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="content-vertical">
+
+  <section class="header">
+    <h1>🏨 Hotel Management System</h1>
+    <p style="color: var(--muted);">Complete Hotel Operations Dashboard</p>
+    
+    <div class="search-box">
+      <span>🔍</span>
+      <input id="searchInput" type="text" placeholder="Search room, guest, or staff..." />
+    </div>
+  </section>
+
+  <!-- NEW: Links to standalone 3D and Parking pages -->
+  <div class="external-links">
+    <a href="3d.html" target="_blank">🏢 Open 3D Building View (new tab)</a>
+    <a href="parking.html" target="_blank">🅿️ Open Parking Management (new tab)</a>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('3d')">🏢 3D Building View</button>
+    <button class="tab-btn" onclick="switchTab('rooms')">🛏️ Room Management</button>
+    <button class="tab-btn" onclick="switchTab('parking')">🅿️ Parking Area</button>
+    <button class="tab-btn" onclick="switchTab('staff')">👥 Staff Management</button>
+    <button class="tab-btn" onclick="switchTab('booking')">📅 Booking Page</button>
+    <button class="tab-btn" onclick="switchTab('revenue')">💰 Revenue & Occupancy</button>
+    <button class="tab-btn" onclick="switchTab('payments')">💳 Secure Payments</button>
+    <button class="tab-btn" onclick="switchTab('invoices')">📄 Invoices</button>
+    <button class="tab-btn" onclick="switchTab('security')">🔒 Security Logs</button>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div id="dashboard" class="tab-content active">
+    <div class="panel-card">
+      <h2>Live Stats</h2>
+      <div class="stats-grid">
+        <div class="stats-item">📊 Bookings: <strong id="statBookings">0</strong></div>
+        <div class="stats-item">🏠 Available Rooms: <strong id="statAvailable">0</strong></div>
+        <div class="stats-item">📈 Occupancy: <strong id="statOccupancy">0%</strong></div>
+        <div class="stats-item">🚪 Check-outs: <strong id="statCheckouts">0</strong></div>
+        <div class="stats-item">🔧 Maintenance: <strong id="statMaintenance">0</strong></div>
+        <div class="stats-item">🅿️ Parking Used: <strong id="statParking">0</strong></div>
+        <div class="stats-item">👤 Ashton: <strong id="ashtonStatus" style="color:#2ecc71;">● Online</strong></div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Live Room Monitor</h2>
+      <div class="hotel-grid" id="hotelGrid"></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Quick Manager Actions</h2>
+      <div class="action-grid">
+        <button class="action-card" onclick="switchTab('booking')">+ New Booking</button>
+        <button class="action-card" onclick="switchTab('staff')">👔 Manage Staff</button>
+        <button class="action-card" onclick="switchTab('payments')">💰 Process Payment</button>
+        <button class="action-card" onclick="generateOccupancyReport()">📊 Occupancy Report</button>
+        <button class="action-card" onclick="generateRevenueReport()">💰 Revenue Report</button>
+        <button class="action-card" onclick="switchTab('security')">🔒 Security Logs</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D TAB -->
+  <div id="3d" class="tab-content">
+    <div class="panel-card">
+      <h2>🏨 3D Building View - Left Wing (5 rooms) | Right Wing (6 rooms)</h2>
+      <div id="canvas-container"></div>
+      <div style="margin-top: 15px; text-align: center;">
+        <span>🟢 Available</span> <span>🔴 Occupied</span> <span>🟠 Maintenance</span> <span>🔵 Cleaning</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROOMS TAB -->
+  <div id="rooms" class="tab-content">
+    <div class="panel-card">
+      <h2>Room Management</h2>
+      <div class="hotel-grid" id="roomManagementGrid"></div>
+    </div>
+  </div>
+
+  <!-- PARKING TAB -->
+  <div id="parking" class="tab-content">
+    <div class="panel-card">
+      <h2>🅿️ Hotel Parking Management</h2>
+      <div class="stats-grid" style="margin-bottom: 20px;">
+        <div class="stats-item">Total: <strong id="totalSpots">0</strong></div>
+        <div class="stats-item">Occupied: <strong id="occupiedSpots">0</strong></div>
+        <div class="stats-item">Available: <strong id="availableSpots">0</strong></div>
+      </div>
+      <div id="parkingGrid" class="parking-grid"></div>
+    </div>
+  </div>
+
+  <!-- STAFF TAB -->
+  <div id="staff" class="tab-content">
+    <div class="panel-card">
+      <div style="display: flex; justify-content: space-between;">
+        <h2>Staff Management</h2>
+        <button onclick="showAddStaffModal()">+ Add Staff</button>
+      </div>
+      <table class="staff-table">
+        <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Shift</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="staffList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BOOKING TAB -->
+  <div id="booking" class="tab-content">
+    <div class="panel-card">
+      <h2>New Booking</h2>
+      <form id="bookingForm" class="booking-form">
+        <input type="text" id="guestName" placeholder="Guest Name" required>
+        <input type="email" id="guestEmail" placeholder="Email" required>
+        <input type="tel" id="guestPhone" placeholder="Phone" required>
+        <select id="roomSelect" required></select>
+        <input type="date" id="checkIn" required>
+        <input type="date" id="checkOut" required>
+        <button type="submit">Confirm Booking</button>
+      </form>
+      <h3>Recent Bookings</h3>
+      <div id="recentBookings"></div>
+    </div>
+  </div>
+
+  <!-- REVENUE TAB -->
+  <div id="revenue" class="tab-content">
+    <div class="panel-card">
+      <h2>Revenue & Occupancy Charts</h2>
+      <div class="revenue-chart"><canvas id="revenueChart"></canvas></div>
+      <div class="revenue-chart"><canvas id="occupancyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- PAYMENTS TAB -->
+  <div id="payments" class="tab-content">
+    <div class="panel-card">
+      <h2>Secure Payment</h2>
+      <div class="payment-card">
+        <form id="paymentForm" class="booking-form">
+          <input type="text" id="invoiceId" placeholder="Invoice ID" required>
+          <input type="number" id="paymentAmount" placeholder="Amount" required>
+          <select id="paymentMethodSecure">
+            <option value="Credit Card">💳 Credit Card</option>
+            <option value="Debit Card">💳 Debit Card</option>
+            <option value="PayPal">💰 PayPal</option>
+          </select>
+          <button type="submit">Process Payment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICES TAB -->
+  <div id="invoices" class="tab-content">
+    <div class="panel-card">
+      <h2>Invoices</h2>
+      <div id="invoiceList"></div>
+    </div>
+  </div>
+
+  <!-- SECURITY TAB -->
+  <div id="security" class="tab-content">
+    <div class="panel-card">
+      <h2>Security Logs</h2>
+      <div id="securityLogs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div id="staffModal" class="modal">
+  <div class="modal-content">
+    <h3>Add Staff Member</h3>
+    <form id="addStaffForm" class="booking-form">
+      <input type="text" id="staffName" placeholder="Full Name" required>
+      <input type="text" id="staffRole" placeholder="Role" required>
+      <input type="email" id="staffEmail" placeholder="Email" required>
+      <select id="staffShift">
+        <option>Morning</option><option>Evening</option><option>Night</option>
+      </select>
+      <button type="submit">Add</button>
+      <button type="button" onclick="closeModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ==================== DATA ====================
+let rooms = [];
+let parkingSpots = [];
+let staff = [];
+let bookings = [];
+let invoices = [];
+let securityLogs = [];
+let revenueData = [];
+let revenueChart, occupancyChart;
+
+// ==================== INITIALIZE ====================
+function init() {
+  rooms = [];
+  parkingSpots = [];
+  staff = [];
+  bookings = [];
+  invoices = [];
+  securityLogs = [];
+  revenueData = [];
+  renderAll();
+  setupEventListeners();
+}
+
+// ==================== RENDER FUNCTIONS ====================
+function renderAll() {
+  renderRooms();
+  renderRoomManagement();
+  renderParking();
+  renderStaff();
+  renderBookings();
+  renderInvoices();
+  renderSecurityLogs();
+  updateStats();
+  renderCharts();
+}
+
+function renderRooms() {
+  const grid = document.getElementById('hotelGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  rooms.slice(0, 30).forEach(room => {
+    const div = document.createElement('div');
+    div.className = `room ${room.status}`;
+    div.innerHTML = `<div>Room ${room.number}</div><small>${room.booker || 'Available'}</small>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderRoomManagement() {
+  const grid = document.getElementById('roomManagementGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  rooms.forEach(room => {
+    const div = document.createElement('div');
+    div.className = `room ${room.status}`;
+    div.innerHTML = `<div>Room ${room.number}</div><small>A$${room.price}</small><button onclick="changeRoomStatus(${room.number})" style="margin-top:8px;padding:4px 8px;">Change</button>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderParking() {
+  const grid = document.getElementById('parkingGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  parkingSpots.forEach(spot => {
+    const div = document.createElement('div');
+    div.className = `parking-spot ${spot.status}`;
+    div.innerHTML = `<strong>${spot.id}</strong><br>${spot.status === 'available' ? '✅ Free' : '🚗 Taken'}`;
+    div.onclick = () => toggleParking(spot.id);
+    grid.appendChild(div);
+  });
+  
+  const occupied = parkingSpots.filter(s => s.status === 'occupied').length;
+  document.getElementById('occupiedSpots').innerHTML = occupied;
+  document.getElementById('availableSpots').innerHTML = parkingSpots.length - occupied;
+  document.getElementById('totalSpots').innerHTML = parkingSpots.length;
+}
+
+function renderStaff() {
+  const tbody = document.getElementById('staffList');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  staff.forEach(m => {
+    tbody.innerHTML += `<tr><td>${m.name}</td><td>${m.role}</td><td>${m.email}</td><td>${m.shift}</td><td>● ${m.status}</td><td><button onclick="deleteStaff(${m.id})">Delete</button></td></tr>`;
+  });
+}
+
+function renderBookings() {
+  const container = document.getElementById('recentBookings');
+  if (container) {
+    container.innerHTML = bookings.map(b => `<div class="invoice-item"><strong>${b.guestName}</strong> - Room ${b.room}<br>${b.checkIn} to ${b.checkOut} | A$${b.amount}</div>`).join('');
+  }
+  const roomSelect = document.getElementById('roomSelect');
+  if (roomSelect) {
+    const available = rooms.filter(r => r.status === 'free');
+      roomSelect.innerHTML = available.map(r => `<option value="${r.number}">Room ${r.number} - A$${r.price}/night</option>`).join('');
+  }
+}
+
+function renderInvoices() {
+  const container = document.getElementById('invoiceList');
+  if (container) {
+    container.innerHTML = invoices.map(inv => `<div class="invoice-item"><strong>${inv.id}</strong> - ${inv.guest}<br>Amount: A$${inv.amount} | Status: ${inv.status}</div>`).join('');
+  }
+}
+
+function renderSecurityLogs() {
+  const container = document.getElementById('securityLogs');
+  if (container) {
+    container.innerHTML = securityLogs.slice(0, 10).map(log => `<div class="security-log">[${log.timestamp}] ${log.user} - ${log.action}</div>`).join('');
+  }
+}
+
+function updateStats() {
+  const total = rooms.length;
+  const available = rooms.filter(r => r.status === 'free').length;
+  const occupied = rooms.filter(r => r.status === 'checkedin').length;
+  const occupancy = Math.round((occupied / total) * 100);
+  const maintenance = rooms.filter(r => r.status === 'maintenance').length;
+  const parkingUsed = parkingSpots.filter(s => s.status === 'occupied').length;
+  
+  document.getElementById('statBookings').innerHTML = bookings.length;
+  document.getElementById('statAvailable').innerHTML = available;
+  document.getElementById('statOccupancy').innerHTML = occupancy + '%';
+  document.getElementById('statCheckouts').innerHTML = 0;
+  document.getElementById('statMaintenance').innerHTML = maintenance;
+  document.getElementById('statParking').innerHTML = parkingUsed;
+}
+
+// ==================== ACTIONS ====================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  if (tabId === '3d') {
+    init3D();
+  }
+}
+
+function changeRoomStatus(roomNum) {
+  const room = rooms.find(r => r.number === roomNum);
+  if (room) {
+    const newStatus = prompt('New status (free/checkedin/booked/maintenance):', room.status);
+    if (newStatus) {
+      room.status = newStatus;
+      renderRoomManagement();
+      renderRooms();
+      updateStats();
+      addSecurityLog(`Room ${roomNum} status changed to ${newStatus}`);
+    }
+  }
+}
+
+function toggleParking(spotId) {
+  const spot = parkingSpots.find(s => s.id === spotId);
+  if (spot) {
+    spot.status = spot.status === 'available' ? 'occupied' : 'available';
+    renderParking();
+    updateStats();
+    addSecurityLog(`Parking ${spotId} ${spot.status}`);
+  }
+}
+
+function deleteStaff(id) {
+  if (confirm('Delete staff member?')) {
+    staff = staff.filter(s => s.id !== id);
+    renderStaff();
+    addSecurityLog(`Staff member deleted`);
+  }
+}
+
+function showAddStaffModal() {
+  document.getElementById('staffModal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('staffModal').style.display = 'none';
+}
+
+// Form submissions
+document.getElementById('bookingForm')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const guestName = document.getElementById('guestName').value;
+  const room = document.getElementById('roomSelect').value;
+  if (guestName && room) {
+    const newBooking = {
+      id: `B00${bookings.length + 1}`,
+      guestName: guestName,
+      room: parseInt(room),
+      checkIn: document.getElementById('checkIn').value,
+      checkOut: document.getElementById('checkOut').value,
+      amount: 500,
+      paymentStatus: 'pending'
+    };
+    bookings.push(newBooking);
+    const roomObj = rooms.find(r => r.number == room);
+    if (roomObj) roomObj.status = 'booked';
+    invoices.push({ id: `INV-00${invoices.length + 1}`, guest: guestName, amount: 500, status: 'pending' });
+    renderAll();
+    addSecurityLog(`New booking for ${guestName}`);
+    alert('Booking confirmed!');
+    e.target.reset();
+  }
+});
+
+document.getElementById('paymentForm')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const invoiceId = document.getElementById('invoiceId').value;
+  const amount = parseFloat(document.getElementById('paymentAmount').value);
+  const invoice = invoices.find(i => i.id === invoiceId);
+  if (invoice && invoice.amount === amount) {
+    invoice.status = 'paid';
+    const booking = bookings.find(b => b.id === invoiceId.replace('INV-', 'B00'));
+    if (booking) booking.paymentStatus = 'paid';
+    renderAll();
+    addSecurityLog(`Payment of A$${amount} processed for ${invoiceId}`);
+    alert('Payment successful!');
+    e.target.reset();
+  } else {
+    alert('Invalid invoice ID or amount');
+  }
+});
+
+document.getElementById('addStaffForm')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const newStaff = {
+    id: staff.length + 1,
+    name: document.getElementById('staffName').value,
+    role: document.getElementById('staffRole').value,
+    email: document.getElementById('staffEmail').value,
+    shift: document.getElementById('staffShift').value,
+    status: 'active'
+  };
+  staff.push(newStaff);
+  renderStaff();
+  closeModal();
+  addSecurityLog(`New staff: ${newStaff.name}`);
+  alert('Staff added!');
+});
+
+function addSecurityLog(action) {
+  securityLogs.unshift({
+    id: securityLogs.length + 1,
+    timestamp: new Date().toLocaleString(),
+    user: 'Manager',
+    action: action,
+    status: 'success'
+  });
+  renderSecurityLogs();
+}
+
+function generateOccupancyReport() {
+  const total = rooms.length;
+  const occupied = rooms.filter(r => r.status === 'checkedin').length;
+  alert(`📊 OCCUPANCY REPORT\n\nTotal Rooms: ${total}\nOccupied: ${occupied}\nOccupancy: ${Math.round((occupied/total)*100)}%`);
+  addSecurityLog('Occupancy report generated');
+}
+
+function generateRevenueReport() {
+  const total = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
+    alert(`💰 REVENUE REPORT\n\nTotal Revenue: A$${total}`);
+  addSecurityLog('Revenue report generated');
+}
+
+// Ashton live status
+// Live status will be connected to database/server status later.
+
+// Charts
+function renderCharts() {
+  const revCtx = document.getElementById('revenueChart');
+  const occCtx = document.getElementById('occupancyChart');
+  if (revCtx && revenueChart) revenueChart.destroy();
+  if (occCtx && occupancyChart) occupancyChart.destroy();
+  
+  if (revCtx) {
+    revenueChart = new Chart(revCtx, {
+      type: 'line',
+      data: { labels: revenueData.map(d => d.month), datasets: [{ label: 'Revenue ($)', data: revenueData.map(d => d.revenue), borderColor: '#d6b36a', backgroundColor: 'rgba(214,179,106,0.1)', tension: 0.4, fill: true }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+    });
+  }
+  if (occCtx) {
+    occupancyChart = new Chart(occCtx, {
+      type: 'bar',
+      data: { labels: revenueData.map(d => d.month), datasets: [{ label: 'Occupancy (%)', data: revenueData.map(d => d.occupancy), backgroundColor: '#2ecc71', borderRadius: 8 }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: 'white' } } } }
+    });
+  }
+}
+
+// 3D init (simplified – keep existing placeholder)
+function init3D() {
+  const container = document.getElementById('canvas-container');
+  if (!container || container.children.length > 0) return;
+  container.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100%; color: #d6b36a;">🎮 3D view ready (click external link for full experience)</div>';
+}
+
+// Start everything
+init();
+</script>
+</body>
+</html>

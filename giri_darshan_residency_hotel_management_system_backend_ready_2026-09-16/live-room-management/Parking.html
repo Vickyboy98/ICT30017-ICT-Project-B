@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parking Management | Hotel PMS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(135deg, #0b1220 0%, #0f2747 100%);
+      font-family: 'Inter', system-ui, sans-serif;
+      padding: 2rem;
+      min-height: 100vh;
+      color: #f0f3fa;
+    }
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid rgba(214,179,106,0.3);
+      padding-bottom: 1rem;
+    }
+    h1 {
+      background: linear-gradient(135deg, #f5e7c8, #d6b36a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .back-btn {
+      background: rgba(214,179,106,0.2);
+      border: 1px solid #d6b36a;
+      padding: 8px 24px;
+      border-radius: 40px;
+      color: #d6b36a;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .back-btn:hover {
+      background: #d6b36a;
+      color: #0b1220;
+    }
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: rgba(18,28,40,0.75);
+      backdrop-filter: blur(8px);
+      border-radius: 24px;
+      padding: 1rem 1.8rem;
+      flex: 1;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #d6b36a;
+    }
+    .parking-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 14px;
+      background: rgba(6,12,22,0.6);
+      backdrop-filter: blur(8px);
+      border-radius: 32px;
+      padding: 1.5rem;
+      border: 1px solid rgba(214,179,106,0.25);
+    }
+    .parking-tile {
+      background: rgba(25,35,55,0.8);
+      border-radius: 20px;
+      padding: 14px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 1px solid rgba(214,179,106,0.2);
+    }
+    .parking-tile.available {
+      background: linear-gradient(145deg, #1a6642, #0e4a30);
+    }
+    .parking-tile.occupied {
+      background: linear-gradient(145deg, #962b38, #691a24);
+    }
+    .parking-tile:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.08);
+    }
+    .spot-id {
+      font-weight: bold;
+    }
+    .log-section {
+      margin-top: 2rem;
+      background: rgba(10,18,28,0.6);
+      border-radius: 28px;
+      padding: 1.2rem;
+    }
+    .log-list {
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+    }
+    .log-entry {
+      background: rgba(0,0,0,0.3);
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border-left: 3px solid #d6b36a;
+      border-radius: 12px;
+    }
+    button {
+      background: #d6b36a;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🅿️ Hotel Parking Manager</h1>
+    <a href="index.html" class="back-btn">← Back to Dashboard</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">Total Spots: <div class="stat-number" id="totalSpots">0</div></div>
+    <div class="stat-card">Occupied: <div class="stat-number" id="occupiedCount">0</div></div>
+    <div class="stat-card">Available: <div class="stat-number" id="availableCount">0</div></div>
+  </div>
+
+  <div id="parkingGrid" class="parking-grid"></div>
+  <button id="resetBtn">Release all occupied spots</button>
+
+  <div class="log-section">
+    <h3>📋 Activity Log</h3>
+    <div id="logList" class="log-list"></div>
+  </div>
+</div>
+
+<script>
+  let parkingSpots = [];
+  let logs = [];
+
+  function addLog(msg) {
+    logs.unshift({ time: new Date().toLocaleTimeString(), text: msg });
+    if (logs.length > 20) logs.pop();
+    renderLogs();
+  }
+
+  function renderLogs() {
+    const container = document.getElementById('logList');
+    if (!container) return;
+    container.innerHTML = logs.map(l => `<div class="log-entry">[${l.time}] ${l.text}</div>`).join('');
+  }
+
+  function initParking() {
+    parkingSpots = [];
+    renderParking();
+    addLog('Parking database connection ready');
+  }
+
+  function renderParking() {
+    const grid = document.getElementById('parkingGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    parkingSpots.forEach(spot => {
+      const tile = document.createElement('div');
+      tile.className = `parking-tile ${spot.status}`;
+      tile.innerHTML = `<div class="spot-id">${spot.id}</div><small>${spot.status === 'available' ? 'FREE' : 'TAKEN'}</small>`;
+      tile.onclick = () => toggleSpot(spot.id);
+      grid.appendChild(tile);
+    });
+    updateStats();
+  }
+
+  function updateStats() {
+    const occupied = parkingSpots.filter(s => s.status === 'occupied').length;
+    document.getElementById('totalSpots').innerText = parkingSpots.length;
+    document.getElementById('occupiedCount').innerText = occupied;
+    document.getElementById('availableCount').innerText = parkingSpots.length - occupied;
+  }
+
+  function toggleSpot(spotId) {
+    const spot = parkingSpots.find(s => s.id === spotId);
+    if (!spot) return;
+    if (spot.status === 'available') {
+      const guest = prompt('Enter guest name:', '');
+      if (guest && guest.trim()) {
+        spot.status = 'occupied';
+        addLog(`✅ ${spot.id} booked by ${guest}`);
+        renderParking();
+      }
+    } else {
+      if (confirm(`Release ${spot.id}?`)) {
+        spot.status = 'available';
+        addLog(`🔓 ${spot.id} released`);
+        renderParking();
+      }
+    }
+  }
+
+  function releaseAll() {
+    if (confirm('Release ALL occupied spots?')) {
+      parkingSpots.forEach(s => { if (s.status === 'occupied') s.status = 'available'; });
+      addLog('🧹 All spots released (bulk reset)');
+      renderParking();
+    }
+  }
+
+  document.getElementById('resetBtn')?.addEventListener('click', releaseAll);
+  initParking();
+</script>
+</body>
+</html>

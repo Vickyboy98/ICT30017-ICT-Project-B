@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hotel Management System</title>
+  
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Three.js for 3D -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+      }
+    }
+  </script>
+  
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,0.06);
+      --text: #f5f7fb;
+      --muted: #a0a8b8;
+      --accent: #d6b36a;
+      --accent-strong: #b8964f;
+      --shadow: 0 30px 80px rgba(0,0,0,.45);
+      font-family: Inter, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #0b1220 30%, #0f2747 60%, #123a63 100%);
+      color: var(--text);
+    }
+
+    .content-vertical {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .header {
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+      letter-spacing: 1px;
+    }
+
+    .search-box {
+      max-width: 420px;
+      margin: 15px auto 0;
+      background: rgba(255,255,255,.05);
+      border-radius: 999px;
+      padding: 12px 18px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid rgba(214,179,106,0.25);
+      backdrop-filter: blur(8px);
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: white;
+      font-size: 14px;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(214,179,106,0.3);
+      padding-bottom: 15px;
+    }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(214,179,106,0.3);
+      padding: 10px 20px;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .tab-btn:hover {
+      background: rgba(214,179,106,0.2);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #0b1220;
+      border-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .panel-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(214,179,106,0.25);
+      border-radius: 18px;
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: var(--accent);
+    }
+
+    .stats-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stats-item {
+      font-size: 0.95rem;
+      color: white;
+      background: rgba(0,0,0,0.3);
+      padding: 10px 15px;
+      border-radius: 12px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .stats-item strong {
+      color: var(--accent);
+      font-size: 1.2rem;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .hotel-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      width: 100%;
+    }
+
+    .room {
+      height: 110px;
+      padding: 14px;
+      border-radius: 16px;
+      color: white;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(6px);
+      transition: all 0.25s ease;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .room:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    }
+
+    .room small {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .room.free { background: linear-gradient(135deg, #1f8f5f, #145a3c); }
+    .room.checkedin { background: linear-gradient(135deg, #8c2f39, #5a1b22); }
+    .room.booked { background: linear-gradient(135deg, #1e3a5f, #12263f); }
+    .room.maintenance { background: linear-gradient(135deg, #3a3a3a, #1f1f1f); }
+    .room.extended { background: linear-gradient(135deg, #c49b3d, #8b6b2c); }
+
+    .tooltip {
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f1f25;
+      color: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      width: 210px;
+      display: none;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: #1f1f25 transparent transparent transparent;
+    }
+
+    .room:hover .tooltip {
+      display: block;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 15px;
+    }
+
+    .action-card {
+      padding: 18px;
+      font-size: 0.9rem;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #d6b36a, #b8964f);
+      color: #1a1a1a;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .action-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    }
+
+    .parking-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .parking-spot {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(214,179,106,0.3);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .parking-spot.available {
+      background: linear-gradient(135deg, #1f8f5f, #145a3c);
+      border-color: #2ecc71;
+    }
+
+    .parking-spot.occupied {
+      background: linear-gradient(135deg, #7a1f2b, #4a1018);
+      border-color: #e74c3c;
+    }
+
+    .parking-spot:hover {
+      transform: translateY(-3px);
+    }
+
+    .staff-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .staff-table th,
+    .staff-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .staff-table th {
+      background: rgba(214,179,106,0.2);
+      color: var(--accent);
+    }
+
+    .booking-form {
+      display: grid;
+      gap: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .booking-form input,
+    .booking-form select {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(214,179,106,0.3);
+      background: rgba(255,255,255,0.1);
+      color: white;
+      font-size: 14px;
+    }
+
+    .booking-form input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .booking-form button {
+      background: var(--accent);
+      color: #0b1220;
+      font-weight: bold;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .revenue-chart {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    .payment-card {
+      background: linear-gradient(135deg, #1e3a5f, #0f2747);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+
+    .invoice-item {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+
+    .security-log {
+      background: rgba(0,0,0,0.3);
+      border-left: 3px solid var(--accent);
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: #0f172a;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      border: 1px solid var(--accent);
+    }
+
+    .modal-content h3 {
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 550px;
+      background: linear-gradient(135deg, #0b1220, #1a2a3a);
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    @media (max-width: 1000px) {
+      .hotel-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .action-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .stats-grid {
+        flex-direction: column;
+      }
+    }
+  
+
+  /* ============================================================
+     THEME ALIGNMENT ONLY — matches main Giri Darshan Residency UI
+     Background colours and fonts updated; layout/function unchanged.
+  ============================================================ */
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0B1628;
+    --panel: rgba(255,255,255,0.065);
+    --text: #F7F3EA;
+    --muted: #C6BCA8;
+    --accent: #C9A96E;
+    --accent-strong: #A88748;
+    --shadow: 0 30px 80px rgba(0,0,0,.45);
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  body {
+    background: linear-gradient(160deg, #040D1A 0%, #0B1628 38%, #162238 72%, #1E3050 100%);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: var(--text);
+  }
+
+  .header h1,
+  .panel-card h2,
+  .modal-content h3 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: var(--accent);
+  }
+
+  .panel-card {
+    background: rgba(11,22,40,0.74);
+    border-color: rgba(201,169,110,0.24);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.34);
+  }
+
+  .search-box,
+  .tab-btn,
+  .parking-spot,
+  .booking-form input,
+  .booking-form select,
+  .invoice-item,
+  .stats-item {
+    background: rgba(255,255,255,0.065);
+    border-color: rgba(201,169,110,0.24);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  .search-box input,
+  .booking-form input::placeholder { color: rgba(247,243,234,0.78); }
+  .tab-btn.active,
+  .booking-form button,
+  .action-card { background: linear-gradient(135deg,#C9A96E,#A88748); color:#0B1628; }
+  .tab-nav { border-bottom-color: rgba(201,169,110,0.28); }
+  .tab-btn:hover { background: rgba(201,169,110,0.16); }
+  .modal-content { background:#0B1628; border-color:rgba(201,169,110,0.42); }
+  #canvas-container { background:linear-gradient(135deg,#0B1628,#162238); }
+
+  .empty-state{padding:24px;text-align:center;color:#8a94a6;grid-column:1/-1;}
+</style>
+</head>
+<body>
+
+<div class="content-vertical">
+
+  <section class="header">
+    <h1>🏨 Hotel Management System</h1>
+    <p style="color: var(--muted);">Complete Hotel Operations Dashboard</p>
+    
+    <div class="search-box">
+      <span>🔍</span>
+      <input id="searchInput" type="text" placeholder="Search room, guest, or staff..." />
+    </div>
+  </section>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('3d')">🏢 3D Building View</button>
+    <button class="tab-btn" onclick="switchTab('rooms')">🛏️ Room Management</button>
+    <button class="tab-btn" onclick="switchTab('parking')">🅿️ Parking Area</button>
+    <button class="tab-btn" onclick="switchTab('staff')">👥 Staff Management</button>
+    <button class="tab-btn" onclick="switchTab('booking')">📅 Booking Page</button>
+    <button class="tab-btn" onclick="switchTab('revenue')">💰 Revenue & Occupancy</button>
+    <button class="tab-btn" onclick="switchTab('payments')">💳 Secure Payments</button>
+    <button class="tab-btn" onclick="switchTab('invoices')">📄 Invoices</button>
+    <button class="tab-btn" onclick="switchTab('security')">🔒 Security Logs</button>
+  </div>
+
+  <!-- DASHBOARD TAB -->
+  <div id="dashboard" class="tab-content active">
+    <div class="panel-card">
+      <h2>Live Stats</h2>
+      <div class="stats-grid">
+        <div class="stats-item">📊 Bookings: <strong id="statBookings">0</strong></div>
+        <div class="stats-item">🏠 Available Rooms: <strong id="statAvailable">0</strong></div>
+        <div class="stats-item">📈 Occupancy: <strong id="statOccupancy">0%</strong></div>
+        <div class="stats-item">🚪 Check-outs: <strong id="statCheckouts">0</strong></div>
+        <div class="stats-item">🔧 Maintenance: <strong id="statMaintenance">0</strong></div>
+        <div class="stats-item">🅿️ Parking Used: <strong id="statParking">0</strong></div>
+        <div class="stats-item">👤 Ashton: <strong id="ashtonStatus" style="color:#2ecc71;">● Online</strong></div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Live Room Monitor</h2>
+      <div class="hotel-grid" id="hotelGrid"></div>
+    </div>
+
+    <div class="panel-card">
+      <h2>Quick Manager Actions</h2>
+      <div class="action-grid">
+        <button class="action-card" onclick="switchTab('booking')">+ New Booking</button>
+        <button class="action-card" onclick="switchTab('staff')">👔 Manage Staff</button>
+        <button class="action-card" onclick="switchTab('payments')">💰 Process Payment</button>
+        <button class="action-card" onclick="generateOccupancyReport()">📊 Occupancy Report</button>
+        <button class="action-card" onclick="generateRevenueReport()">💰 Revenue Report</button>
+        <button class="action-card" onclick="switchTab('security')">🔒 Security Logs</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D TAB -->
+  <div id="3d" class="tab-content">
+    <div class="panel-card">
+      <h2>🏨 3D Building View - Left Wing (5 rooms) | Right Wing (6 rooms)</h2>
+      <div id="canvas-container"></div>
+      <div style="margin-top: 15px; text-align: center;">
+        <span>🟢 Available</span> <span>🔴 Occupied</span> <span>🟠 Maintenance</span> <span>🔵 Cleaning</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROOMS TAB -->
+  <div id="rooms" class="tab-content">
+    <div class="panel-card">
+      <h2>Room Management</h2>
+      <div class="hotel-grid" id="roomManagementGrid"></div>
+    </div>
+  </div>
+
+  <!-- PARKING TAB -->
+  <div id="parking" class="tab-content">
+    <div class="panel-card">
+      <h2>🅿️ Hotel Parking Management</h2>
+      <div class="stats-grid" style="margin-bottom: 20px;">
+        <div class="stats-item">Total: <strong id="totalSpots">0</strong></div>
+        <div class="stats-item">Occupied: <strong id="occupiedSpots">0</strong></div>
+        <div class="stats-item">Available: <strong id="availableSpots">0</strong></div>
+      </div>
+      <div id="parkingGrid" class="parking-grid"></div>
+    </div>
+  </div>
+
+  <!-- STAFF TAB -->
+  <div id="staff" class="tab-content">
+    <div class="panel-card">
+      <div style="display: flex; justify-content: space-between;">
+        <h2>Staff Management</h2>
+        <button onclick="showAddStaffModal()">+ Add Staff</button>
+      </div>
+      <table class="staff-table">
+        <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Shift</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="staffList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BOOKING TAB -->
+  <div id="booking" class="tab-content">
+    <div class="panel-card">
+      <h2>New Booking</h2>
+      <form id="bookingForm" class="booking-form">
+        <input type="text" id="guestName" placeholder="Guest Name" required>
+        <input type="email" id="guestEmail" placeholder="Email" required>
+        <input type="tel" id="guestPhone" placeholder="Phone" required>
+        <select id="roomSelect" required></select>
+        <input type="date" id="checkIn" required>
+        <input type="date" id="checkOut" required>
+        <button type="submit">Confirm Booking</button>
+      </form>
+      <h3>Recent Bookings</h3>
+      <div id="recentBookings"></div>
+    </div>
+  </div>
+
+  <!-- REVENUE TAB -->
+  <div id="revenue" class="tab-content">
+    <div class="panel-card">
+      <h2>Revenue & Occupancy Charts</h2>
+      <div class="revenue-chart"><canvas id="revenueChart"></canvas></div>
+      <div class="revenue-chart"><canvas id="occupancyChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- PAYMENTS TAB -->
+  <div id="payments" class="tab-content">
+    <div class="panel-card">
+      <h2>Secure Payment</h2>
+      <div class="payment-card">
+        <form id="paymentForm" class="booking-form">
+          <input type="text" id="invoiceId" placeholder="Invoice ID" required>
+          <input type="number" id="paymentAmount" placeholder="Amount" required>
+          <select id="paymentMethodSecure">
+            <option value="Credit Card">💳 Credit Card</option>
+            <option value="Debit Card">💳 Debit Card</option>
+            <option value="PayPal">💰 PayPal</option>
+          </select>
+          <button type="submit">Process Payment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICES TAB -->
+  <div id="invoices" class="tab-content">
+    <div class="panel-card">
+      <h2>Invoices</h2>
+      <div id="invoiceList"></div>
+    </div>
+  </div>
+
+  <!-- SECURITY TAB -->
+  <div id="security" class="tab-content">
+    <div class="panel-card">
+      <h2>Security Logs</h2>
+      <div id="securityLogs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div id="staffModal" class="modal">
+  <div class="modal-content">
+    <h3>Add Staff Member</h3>
+    <form id="addStaffForm" class="booking-form">
+      <input type="text" id="staffName" placeholder="Full Name" required>
+      <input type="text" id="staffRole" placeholder="Role" required>
+      <input type="email" id="staffEmail" placeholder="Email" required>
+      <select id="staffShift">
+        <option>Morning</option><option>Evening</option><option>Night</option>
+      </select>
+      <button type="submit">Add</button>
+      <button type="button" onclick="closeModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+
+<script>
+// Stable replacement script for the embedded Live Room + Parking page.
+// Keeps all visible tabs working, including Parking.
+let rooms = [];
+let parkingSpots = [];
+let sessionToken = '';
+let parkingAllocations = [];
+let parkingBusy = false;
+async function parkingApi(route, method = 'GET', body) {
+  if (!sessionToken) throw new Error('Open this page through the signed-in hotel portal.');
+  const response = await fetch('http://localhost:5000/api/' + route, {method, headers:{Authorization:'Bearer '+sessionToken,'Content-Type':'application/json'}, body:body ? JSON.stringify(body) : undefined});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Request failed.');
+  return data;
+}
+function escapeText(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function loadRooms() {
+  const rows = await parkingApi('rooms');
+  rooms = rows.map(r => ({id:r.id,number:r.room_number,type:r.type_name,price:Number(r.base_price_inr || 0),status:({available:'free',occupied:'checkedin'})[r.status] || r.status}));
+  renderRooms(); renderRoomManagement(); updateStats();
+}
+async function loadParking() {
+  const [spots, allocations] = await Promise.all([parkingApi('parking/spots'),parkingApi('parking/allocations')]);
+  parkingSpots = spots; parkingAllocations = allocations;
+  renderParking(); updateStats();
+}
+window.addEventListener('message', async event => {
+  if (event.source !== window.parent || event.origin !== window.location.origin || event.data?.type !== 'gdr-session') return;
+  sessionToken = event.data.token || '';
+  try { await Promise.all([loadParking(), loadRooms()]); } catch(e) { const grid=document.getElementById('parkingGrid'); if(grid) grid.textContent=e.message; }
+});
+let staff = [];
+let bookings = [];
+let invoices = [];
+let securityLogs = [];
+let revenueData = [];
+let revenueChart = null;
+let occupancyChart = null;
+
+function init() {
+  rooms = [];
+  parkingSpots = [];
+  staff = [];
+  bookings = [];
+  invoices = [];
+  securityLogs = [];
+  revenueData = [];
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) searchInput.addEventListener('input', () => renderRooms(searchInput.value));
+  const bookingForm = document.getElementById('bookingForm');
+  if (bookingForm) bookingForm.addEventListener('submit', submitBooking);
+  const paymentForm = document.getElementById('paymentForm');
+  if (paymentForm) paymentForm.addEventListener('submit', submitPayment);
+  const addStaffForm = document.getElementById('addStaffForm');
+  if (addStaffForm) addStaffForm.addEventListener('submit', submitStaff);
+
+  renderAll();
+}
+
+function renderAll() {
+  renderRooms();
+  renderRoomManagement();
+  renderParking();
+  renderStaff();
+  renderBookings();
+  renderInvoices();
+  renderSecurityLogs();
+  updateStats();
+  renderCharts();
+}
+
+function renderRooms(filter = '') {
+  const grid = document.getElementById('hotelGrid');
+  if (!grid) return;
+  const q = String(filter || '').toLowerCase();
+  grid.innerHTML = '';
+  const visibleRooms = rooms.filter(room => room.number.toString().includes(q) || (room.booker || '').toLowerCase().includes(q)).slice(0, 30);
+  if (visibleRooms.length === 0) { grid.innerHTML = '<div class="empty-state">No room records loaded from database.</div>'; return; }
+  visibleRooms.forEach(room => {
+    const div = document.createElement('div');
+    div.className = `room ${room.status}`;
+    div.innerHTML = `<div>Room ${escapeText(room.number)}</div><small>${escapeText(room.booker || room.status)}<br>${escapeText(room.type)}</small>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderRoomManagement() {
+  const grid = document.getElementById('roomManagementGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (rooms.length === 0) { grid.innerHTML = '<div class="empty-state">No room management records loaded from database.</div>'; return; }
+  rooms.forEach(room => {
+    const div = document.createElement('div');
+    div.className = `room ${room.status}`;
+    div.innerHTML = `<div>Room ${escapeText(room.number)}</div><small>${escapeText(room.type)}<br>$${room.price}/night</small><button onclick="changeRoomStatus(${room.id})" style="margin-top:8px;padding:4px 8px;">Change</button>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderParking() {
+  const grid = document.getElementById('parkingGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (parkingSpots.length === 0) { grid.innerHTML = '<div class="empty-state">No parking records loaded from database.</div>'; }
+  parkingSpots.forEach(spot => {
+    const div = document.createElement('div');
+    div.className = `parking-spot ${spot.status}`;
+    div.innerHTML = `<strong>${spot.id}</strong><br>${spot.status === 'available' ? '✅ Free' : '🚗 Taken'}`;
+    div.onclick = () => toggleParking(spot.id);
+    grid.appendChild(div);
+  });
+  const occupied = parkingSpots.filter(s => ['occupied','reserved'].includes(s.status)).length;
+  setText('occupiedSpots', occupied);
+  setText('availableSpots', parkingSpots.filter(s => s.status === 'available').length);
+  setText('totalSpots', parkingSpots.length);
+}
+
+function renderStaff() {
+  const tbody = document.getElementById('staffList');
+  if (!tbody) return;
+  tbody.innerHTML = staff.length ? staff.map(m => `<tr><td>${m.name}</td><td>${m.role}</td><td>${m.email}</td><td>${m.shift}</td><td>● ${m.status}</td><td><button onclick="deleteStaff(${m.id})">Delete</button></td></tr>`).join('') : '<tr><td colspan="6" class="empty-state">No staff records loaded from database.</td></tr>';
+}
+
+function renderBookings() {
+  const container = document.getElementById('recentBookings');
+  if (container) container.innerHTML = bookings.length ? bookings.map(b => `<div class="invoice-item"><strong>${b.guestName}</strong> - Room ${b.room}<br>${b.checkIn} to ${b.checkOut} | $${b.amount}</div>`).join('') : '<div class="empty-state">No booking records loaded from database.</div>';
+  const roomSelect = document.getElementById('roomSelect');
+  if (roomSelect) {
+    const available = rooms.filter(r => r.status === 'free');
+    roomSelect.innerHTML = available.map(r => `<option value="${r.number}">Room ${r.number} - ${r.type} - $${r.price}/night</option>`).join('');
+  }
+}
+
+function renderInvoices() {
+  const container = document.getElementById('invoiceList');
+  if (container) container.innerHTML = invoices.length ? invoices.map(inv => `<div class="invoice-item"><strong>${inv.id}</strong> - ${inv.guest}<br>Amount: $${inv.amount} | Status: ${inv.status}</div>`).join('') : '<div class="empty-state">No invoice records loaded from database.</div>';
+}
+
+function renderSecurityLogs() {
+  const container = document.getElementById('securityLogs');
+  if (container) container.innerHTML = securityLogs.length ? securityLogs.slice(0, 10).map(log => `<div class="security-log">[${log.timestamp}] ${log.user} - ${log.action}</div>`).join('') : '<div class="empty-state">No security log records loaded from database.</div>';
+}
+
+function updateStats() {
+  const total = rooms.length;
+  const available = rooms.filter(r => r.status === 'free').length;
+  const occupied = rooms.filter(r => r.status === 'checkedin').length;
+  const occupancy = total ? Math.round((occupied / total) * 100) : 0;
+  const maintenance = rooms.filter(r => r.status === 'maintenance').length;
+  const parkingUsed = parkingSpots.filter(s => ['occupied','reserved'].includes(s.status)).length;
+  setText('statBookings', bookings.length);
+  setText('statAvailable', available);
+  setText('statOccupancy', occupancy + '%');
+  setText('statCheckouts', 0);
+  setText('statMaintenance', maintenance);
+  setText('statParking', parkingUsed);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function switchTab(tabId, clickedButton) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  const btn = clickedButton || (window.event && window.event.target);
+  if (btn && btn.classList) btn.classList.add('active');
+  if (tabId === 'parking') renderParking();
+  if (tabId === 'rooms') renderRoomManagement();
+  if (tabId === '3d') init3D();
+}
+
+// Make inline onclick robust in all browsers.
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  const txt = btn.textContent.toLowerCase();
+  if (txt.includes('parking')) { e.preventDefault(); switchTab('parking', btn); }
+});
+
+async function changeRoomStatus(roomId) {
+  const room = rooms.find(r => r.id === roomId);
+  if (!room) return;
+  const value = prompt('New status (free/checkedin/booked/maintenance/inactive):',room.status);
+  if (!value) return;
+  const status = ({free:'available',checkedin:'occupied'})[value] || value;
+  if (!['available','occupied','booked','maintenance','inactive'].includes(status)) { alert('Invalid room status.'); return; }
+  try { await parkingApi('rooms/'+room.id,'PATCH',{status}); await loadRooms(); }
+  catch(e) { alert(e.message); }
+}
+
+async function toggleParking(spotId) {
+  if (parkingBusy) return;
+  const spot = parkingSpots.find(s => s.id === spotId);
+  if (!spot) return;
+  parkingBusy = true;
+  try {
+    const allocation = parkingAllocations.find(a => a.parking_spot_id === spotId && ['reserved','active'].includes(a.allocation_status));
+    if (allocation) {
+      await parkingApi('parking/allocations/'+allocation.id+'/release','PATCH');
+    } else {
+      if (spot.status !== 'available') throw new Error('This spot is unavailable.');
+      const availableBookings = await parkingApi('bookings');
+      const reference = prompt('Enter booking reference for this parking reservation:');
+      if (!reference) return;
+      const booking = availableBookings.find(b => b.booking_ref.toLowerCase() === reference.trim().toLowerCase());
+      if (!booking) throw new Error('Booking reference not found.');
+      const vehicleNumber = prompt('Vehicle registration number:');
+      if (!vehicleNumber) return;
+      await parkingApi('parking/allocate','POST',{bookingId:booking.booking_id,parkingSpotId:spotId,vehicleNumber});
+    }
+    await loadParking();
+  } catch(e) { alert(e.message); }
+  finally { parkingBusy=false; }
+}
+
+function deleteStaff(id) {
+  if (!confirm('Delete staff member?')) return;
+  staff = staff.filter(s => s.id !== id);
+  renderStaff();
+  addSecurityLog('Staff member deleted');
+}
+
+function showAddStaffModal() { const el = document.getElementById('staffModal'); if (el) el.style.display = 'flex'; }
+function closeModal() { const el = document.getElementById('staffModal'); if (el) el.style.display = 'none'; }
+
+function submitBooking(e) {
+  e.preventDefault();
+  const guestName = document.getElementById('guestName')?.value || 'Guest';
+  const room = document.getElementById('roomSelect')?.value;
+  if (!room) return alert('Please select an available room.');
+  const newBooking = { id: `B00${bookings.length + 1}`, guestName, room: parseInt(room), checkIn: document.getElementById('checkIn')?.value || '', checkOut: document.getElementById('checkOut')?.value || '', amount: 500, paymentStatus: 'pending' };
+  bookings.push(newBooking);
+  const roomObj = rooms.find(r => r.number == room);
+  if (roomObj) roomObj.status = 'booked';
+  invoices.push({ id: `INV-00${invoices.length + 1}`, guest: guestName, amount: 500, status: 'pending' });
+  renderAll();
+  addSecurityLog(`New booking for ${guestName}`);
+  alert('Booking confirmed!');
+  e.target.reset();
+}
+
+function submitPayment(e) {
+  e.preventDefault();
+  const invoiceId = document.getElementById('invoiceId')?.value;
+  const amount = parseFloat(document.getElementById('paymentAmount')?.value || '0');
+  const invoice = invoices.find(i => i.id === invoiceId);
+  if (invoice && invoice.amount === amount) {
+    invoice.status = 'paid';
+    renderAll();
+    addSecurityLog(`Payment processed for ${invoiceId}`);
+    alert('Payment successful!');
+    e.target.reset();
+  } else alert('Invalid invoice ID or amount');
+}
+
+function submitStaff(e) {
+  e.preventDefault();
+  const newStaff = { id: staff.length + 1, name: document.getElementById('staffName')?.value || 'New Staff', role: document.getElementById('staffRole')?.value || 'Staff', email: document.getElementById('staffEmail')?.value || '', shift: document.getElementById('staffShift')?.value || 'Morning', status: 'active' };
+  staff.push(newStaff);
+  renderStaff();
+  closeModal();
+  addSecurityLog(`New staff: ${newStaff.name}`);
+  alert('Staff added!');
+}
+
+function addSecurityLog(action) {
+  securityLogs.unshift({ id: securityLogs.length + 1, timestamp: new Date().toLocaleString(), user: 'Manager', action, status: 'success' });
+  renderSecurityLogs();
+}
+
+function generateOccupancyReport() {
+  const total = rooms.length;
+  const occupied = rooms.filter(r => r.status === 'checkedin').length;
+  alert(`📊 OCCUPANCY REPORT\n\nTotal Rooms: ${total}\nOccupied: ${occupied}\nOccupancy: ${total ? Math.round((occupied/total)*100) : 0}%`);
+  addSecurityLog('Occupancy report generated');
+}
+
+function generateRevenueReport() {
+  const total = invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0);
+  alert(`💰 REVENUE REPORT\n\nTotal Revenue: $${total}`);
+  addSecurityLog('Revenue report generated');
+}
+
+function init3D() {
+  const container = document.getElementById('canvas-container');
+  if (container && !container.innerHTML.trim()) {
+    container.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:360px;color:white;flex-direction:column;"><h3>🏨 3D Building View</h3><p>3D room data will load from database.</p></div>';
+  }
+}
+
+function renderCharts() {
+  const revCtx = document.getElementById('revenueChart');
+  const occCtx = document.getElementById('occupancyChart');
+  if (!window.Chart) return;
+  if (revCtx) {
+    if (revenueChart) revenueChart.destroy();
+    revenueChart = new Chart(revCtx, { type: 'line', data: { labels: revenueData.map(d => d.month), datasets: [{ label: 'Revenue ($)', data: revenueData.map(d => d.revenue), borderColor: '#d6b36a', backgroundColor: 'rgba(214,179,106,.18)', tension: .3 }] }, options: { responsive: true, maintainAspectRatio: false } });
+  }
+  if (occCtx) {
+    if (occupancyChart) occupancyChart.destroy();
+    occupancyChart = new Chart(occCtx, { type: 'bar', data: { labels: revenueData.map(d => d.month), datasets: [{ label: 'Occupancy (%)', data: revenueData.map(d => d.occupancy), backgroundColor: 'rgba(46,204,113,.55)' }] }, options: { responsive: true, maintainAspectRatio: false } });
+  }
+}
+
+// Live status updates will be connected to database/server status later.
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
