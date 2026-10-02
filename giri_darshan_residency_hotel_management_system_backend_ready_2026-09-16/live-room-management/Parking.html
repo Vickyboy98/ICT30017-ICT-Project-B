@@ -126,6 +126,32 @@
       cursor: pointer;
       margin-top: 12px;
     }
+
+    /* Reference palette and typography — presentation only. */
+    body {
+      background: #f2f0ea;
+      color: #263442;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    h1,
+    h3 { color: #263442; font-family: Georgia, "Times New Roman", serif; }
+    h1 { background: none; -webkit-text-fill-color: #263442; }
+    .header { border-bottom-color: #d9d6cf; }
+    .back-btn {
+      background: #e8e3d8;
+      border-color: #c4a56d;
+      color: #263442;
+    }
+    .back-btn:hover { background: #c4a56d; color: #263442; }
+    .stat-card,
+    .log-section { background: #223748; color: #f5f3ee; }
+    .stat-number { color: #d0ad61; }
+    .parking-grid { background: #e8e3d8; border-color: #d9d6cf; }
+    .parking-tile { background: #d2bf9e; border-color: #c4a56d; color: #263442; }
+    .parking-tile.available { background: linear-gradient(135deg, #72b481, #4f9365); color: #fff; }
+    .parking-tile.occupied { background: linear-gradient(135deg, #626569, #3f4348); color: #fff; }
+    .log-entry { background: rgba(255,255,255,0.1); border-left-color: #d0ad61; }
+    button { background: #c4a56d; color: #263442; font-family: Georgia, "Times New Roman", serif; }
   </style>
 </head>
 <body>

@@ -474,6 +474,99 @@
   #canvas-container { background:linear-gradient(135deg,#0B1628,#162238); }
 
   .empty-state{padding:24px;text-align:center;color:#8a94a6;grid-column:1/-1;}
+
+  /* Reference palette and typography — presentation only. */
+  :root {
+    --bg: #f2f0ea;
+    --panel: #223748;
+    --text: #263442;
+    --muted: #747a7d;
+    --accent: #c4a56d;
+    --accent-strong: #a98445;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  body {
+    background: #f2f0ea;
+    color: #263442;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  .header h1,
+  .panel-card h2,
+  .modal-content h3,
+  .room > div {
+    color: #263442;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  .search-box,
+  .tab-btn,
+  .parking-spot,
+  .booking-form input,
+  .booking-form select {
+    background: #f7f6f2;
+    border-color: #d9d6cf;
+    color: #263442;
+  }
+
+  .search-box input,
+  .booking-form input,
+  .booking-form select { color: #263442; }
+  .search-box input::placeholder,
+  .booking-form input::placeholder { color: #777b7d; }
+
+  .panel-card {
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .panel-card h2,
+  .stats-item,
+  .stats-item strong { color: #263442; }
+  .stats-item { background: transparent; }
+
+  #dashboard > .panel-card:first-child {
+    background: #223748;
+    border-color: #223748;
+  }
+
+  #dashboard > .panel-card:first-child h2,
+  #dashboard > .panel-card:first-child .stats-item,
+  #dashboard > .panel-card:first-child .stats-item strong { color: #f5f3ee; }
+
+  .room { font-family: Georgia, "Times New Roman", serif; }
+  .room.free { background: linear-gradient(135deg, #72b481, #4f9365); color: #fff; }
+  .room.booked,
+  .room.checkedin,
+  .room.vacant { background: linear-gradient(135deg, #d2bf9e, #b89b70); color: #263442; }
+  .room.extended { background: linear-gradient(135deg, #d0ad61, #b48d3f); color: #263442; }
+  .room.maintenance { background: linear-gradient(135deg, #626569, #3f4348); color: #fff; }
+  .room.free > div,
+  .room.maintenance > div { color: #fff; }
+
+  .tab-btn { color: #263442; }
+  .tab-btn.active,
+  .booking-form button,
+  .action-card { background: #c4a56d; color: #263442; }
+  .tab-btn:hover { background: #e5d6b8; }
+  .action-card { font-family: Georgia, "Times New Roman", serif; }
+  .staff-table th { background: #e7dfd0; color: #263442; }
+  .staff-table th,
+  .staff-table td { border-bottom-color: #d9d6cf; }
+  .payment-card,
+  .invoice-item,
+  .security-log,
+  .modal-content { background: #e8e3d8; color: #263442; }
+  .modal { background: rgba(29, 38, 46, 0.55); }
+  .modal-content { border-color: #c4a56d; }
+  .modal-content h3 { color: #263442; }
+  .tooltip { background: #223748; color: #f5f3ee; }
+  .tooltip::after { border-color: #223748 transparent transparent transparent; }
+  #canvas-container { background: #e8e3d8; color: #263442 !important; }
+  #canvas-container > div,
+  #canvas-container h3,
+  #canvas-container p { color: #263442 !important; }
 </style>
 </head>
 <body>
