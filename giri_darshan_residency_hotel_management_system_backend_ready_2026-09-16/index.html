@@ -1811,74 +1811,979 @@ Object.assign(window, { ROOMS, BOOKINGS_SAMPLE, HomePage, RoomsPage, RoomDetailP
 // ─── CUSTOMER DASHBOARD ───────────────────────────────────────────────────────
 const CustomerDashboard = ({ setPage }) => {
   const session = React.useContext(AuthContext);
+
   const [dashboard, setDashboard] = React.useState(null);
-  React.useEffect(() => {
+  const [loading, setLoading] = React.useState(true);
+  const [dashboardError, setDashboardError] = React.useState('');
+  const [cancelling, setCancelling] = React.useState(null);
+  const [cancelError, setCancelError] = React.useState('');
+  const [cancelTarget, setCancelTarget] = React.useState(null);
+
+  // ─── LOAD CUSTOMER DASHBOARD ───────────────────────────────
+  const loadDashboard = async () => {
     if (!session?.token) return;
-    const controller = new AbortController();
-    fetch('http://localhost:5000/api/dashboard/customer', { headers: { Authorization: `Bearer ${session.token}` }, signal: controller.signal })
-      .then(r => r.ok ? r.json() : Promise.reject(new Error('Dashboard data could not be loaded.')))
-      .then(setDashboard).catch(() => {});
-    return () => controller.abort();
+
+    setLoading(true);
+    setDashboardError('');
+
+    try {
+      const response = await fetch(
+        'http://localhost:5000/api/dashboard/customer',
+        {
+          headers: {
+            Authorization: `Bearer ${session.token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || 'Dashboard data could not be loaded.'
+        );
+      }
+
+      setDashboard(data);
+    } catch (error) {
+      setDashboardError(
+        error.message || 'Dashboard data could not be loaded.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    loadDashboard();
   }, [session?.token]);
+
+  // ─── CUSTOMER INFORMATION ──────────────────────────────────
   const profile = dashboard?.profile;
   const summary = dashboard?.summary || {};
   const bookings = dashboard?.bookings || [];
-  const customerName = session?.user ? `${session.user.first_name} ${session.user.last_name}` : 'Customer';
+
+  const firstName =
+    session?.user?.first_name || 'Guest';
+
+  const customerName = session?.user
+    ? `${session.user.first_name || ''} ${session.user.last_name || ''}`.trim()
+    : 'Customer';
+
+  const customerInitial =
+    firstName.charAt(0).toUpperCase() || 'G';
+
+  // ─── DATE FORMATTER ────────────────────────────────────────
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '—';
+
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return String(dateValue).slice(0, 10);
+    }
+
+    return date.toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  // ─── FIND NEXT UPCOMING BOOKING ────────────────────────────
+  const activeBookings = bookings
+    .filter(
+      booking =>
+        !['cancelled', 'checked_out'].includes(
+          String(booking.booking_status || '').toLowerCase()
+        )
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.check_in_date) - new Date(b.check_in_date)
+    );
+
+  const upcomingBooking = activeBookings[0] || null;
+
+  // ─── CAN CUSTOMER CANCEL THIS BOOKING? ─────────────────────
+  const canCancelBooking = (booking) => {
+    const status = String(
+      booking.booking_status || ''
+    ).toLowerCase();
+
+    return ![
+      'cancelled',
+      'checked_in',
+      'checked_out'
+    ].includes(status);
+  };
+
+  // ─── CANCEL BOOKING ────────────────────────────────────────
+  const confirmCancellation = async () => {
+    if (!cancelTarget || cancelling !== null) return;
+
+    setCancelling(cancelTarget.booking_id);
+    setCancelError('');
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/bookings/${cancelTarget.booking_id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.token}`
+          },
+          body: JSON.stringify({
+            status: 'cancelled'
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || 'Booking could not be cancelled.'
+        );
+      }
+
+      setCancelTarget(null);
+
+      // Reload dashboard from database
+      await loadDashboard();
+
+    } catch (error) {
+      setCancelError(
+        error.message || 'Booking could not be cancelled.'
+      );
+    } finally {
+      setCancelling(null);
+    }
+  };
+
   return (
-    <div style={{ background: DS.c.ivory, minHeight: '100vh' }}>
-      <div style={{ background: DS.c.navy, padding: '18px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 34, height: 34, background: DS.c.gold, borderRadius: DS.r.md, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: DS.f.serif, fontWeight: 700, color: DS.c.navy }}>GD</div>
-          <div style={{ fontFamily: DS.f.serif, color: DS.c.white, fontSize: 18 }}>Giri Darshan Residency</div>
+    <div
+      style={{
+        background: DS.c.ivory,
+        minHeight: '100vh',
+        paddingBottom: 90
+      }}
+    >
+
+      {/* ───────────── TOP NAVIGATION ───────────── */}
+      <div
+        style={{
+          background: DS.c.navy,
+          padding: '16px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: DS.s.sm
+        }}
+      >
+
+        {/* Hotel Logo */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            cursor: 'pointer'
+          }}
+          onClick={() => setPage('home')}
+        >
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              background: `linear-gradient(135deg, ${DS.c.gold}, ${DS.c.goldDark})`,
+              borderRadius: DS.r.md,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: DS.f.serif,
+              fontWeight: 700,
+              color: DS.c.navy
+            }}
+          >
+            GD
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontFamily: DS.f.serif,
+                color: DS.c.white,
+                fontSize: 18,
+                fontWeight: 600
+              }}
+            >
+              Giri Darshan Residency
+            </div>
+
+            <div
+              style={{
+                color: DS.c.gold,
+                fontSize: 9,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase'
+              }}
+            >
+              My Stay
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Button variant="outline" size="sm" onClick={() => setPage('booking')}>New Booking</Button>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', color: DS.c.gold, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: DS.f.serif }}>C</div>
+
+        {/* Right Navigation */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center'
+          }}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPage('rooms')}
+            style={{
+              color: DS.c.white
+            }}
+          >
+            Browse Rooms
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setPage('booking')}
+          >
+            New Booking
+          </Button>
+
+          <div
+            title={customerName}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.12)',
+              border: `1px solid rgba(201,169,110,0.35)`,
+              color: DS.c.gold,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: DS.f.serif,
+              fontSize: 17,
+              fontWeight: 600
+            }}
+          >
+            {customerInitial}
+          </div>
         </div>
       </div>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '48px 40px' }}>
-        <h1 style={{ fontFamily: DS.f.serif, fontSize: 34, fontWeight: 600 }}>Customer Dashboard</h1>
-        <p style={{ color: DS.c.textMuted, marginBottom: 28 }}>Your bookings and customer profile from the database.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-          <StatCard label="Upcoming Stays" value={summary.upcomingStays ?? '—'} sub="From your bookings" icon="calendar" />
-          <StatCard label="Total Bookings" value={summary.totalBookings ?? '—'} sub="From your bookings" icon="chevronRight" />
-          <StatCard label="Loyalty Points" value={profile?.loyalty_points ?? '—'} sub={profile?.membership_tier || 'Customer profile'} icon="star" />
-          <StatCard label="Total Spent" value={summary.totalSpentInr == null ? '—' : `A$${Number(summary.totalSpentInr).toLocaleString('en-AU')}`} sub="Paid booking total" icon="payment" />
-        </div>
-        <div className="ga-card" style={{ padding: '28px', marginBottom: 26 }}>
-          <div style={{ fontSize: 11, letterSpacing: '0.14em', color: DS.c.gold, textTransform: 'uppercase', marginBottom: 8 }}>Upcoming Reservation</div>
-          <h2 style={{ fontFamily: DS.f.serif, color: DS.c.text, marginBottom: 8 }}>{bookings[0]?.room_type || 'No active reservation'}</h2>
-          <p style={{ color: DS.c.textMuted }}>{bookings[0] ? `${bookings[0].check_in_date} to ${bookings[0].check_out_date} · ${bookings[0].booking_status}` : 'Confirmed bookings will appear here when available.'}</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
-          <div className="ga-card" style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '18px 22px', borderBottom: `1px solid ${DS.c.border}` }}>
-              <h3 style={{ fontFamily: DS.f.serif, fontSize: 20 }}>My Bookings</h3>
+
+      {/* ───────────── MAIN CONTENT ───────────── */}
+      <div
+        style={{
+          maxWidth: 1180,
+          margin: '0 auto',
+          padding: '44px 40px'
+        }}
+      >
+
+        {/* Welcome Section */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: 20,
+            marginBottom: 28
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: DS.c.gold,
+                marginBottom: 7
+              }}
+            >
+              My Stay
             </div>
-            <table className="ga-table">
-              <thead><tr><th>Booking ID</th><th>Room</th><th>Check-In</th><th>Check-Out</th><th>Status</th></tr></thead>
-              <tbody>
-                {bookings.length === 0 ? <tr><td colSpan="5" style={{ textAlign: 'center', padding: 28, color: DS.c.textMuted }}>No booking records found.</td></tr> : bookings.map(b => <tr key={b.booking_id}><td>{b.booking_ref}</td><td>{b.room_type}</td><td>{b.check_in_date}</td><td>{b.check_out_date}</td><td><Badge status={b.booking_status} text={b.booking_status} /></td></tr>)}
-              </tbody>
-            </table>
+
+            <h1
+              style={{
+                fontFamily: DS.f.serif,
+                fontSize: 38,
+                fontWeight: 600,
+                color: DS.c.text,
+                lineHeight: 1.1,
+                marginBottom: 8
+              }}
+            >
+              Hi, {firstName} 👋
+            </h1>
+
+            <p
+              style={{
+                color: DS.c.textMuted,
+                fontSize: 14
+              }}
+            >
+              Welcome back to Giri Darshan Residency. Manage your stays and reservations here.
+            </p>
           </div>
-          <div className="ga-card" style={{ padding: '22px' }}>
-            <h3 style={{ fontFamily: DS.f.serif, fontSize: 18, marginBottom: 16 }}>Profile</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: `linear-gradient(135deg, ${DS.c.gold}, ${DS.c.goldDark})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: DS.f.serif, fontSize: 22, fontWeight: 600, color: DS.c.navy }}>C</div>
+
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setPage('booking')}
+          >
+            Book a Room
+          </Button>
+        </div>
+
+        {/* Error Message */}
+        {dashboardError && (
+          <div
+            style={{
+              background: DS.c.dangerBg,
+              color: DS.c.danger,
+              padding: '12px 16px',
+              borderRadius: DS.r.md,
+              marginBottom: 20,
+              fontSize: 13
+            }}
+          >
+            {dashboardError}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div
+            className="ga-card"
+            style={{
+              padding: 30,
+              marginBottom: 24,
+              textAlign: 'center',
+              color: DS.c.textMuted
+            }}
+          >
+            Loading your stay information...
+          </div>
+        )}
+
+        {/* ───────────── SUMMARY CARDS ───────────── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 16,
+            marginBottom: 26
+          }}
+        >
+          <StatCard
+            label="Upcoming Stays"
+            value={summary.upcomingStays ?? 0}
+            sub="Active reservations"
+            icon="booking"
+          />
+
+          <StatCard
+            label="Total Bookings"
+            value={summary.totalBookings ?? 0}
+            sub="Your reservations"
+            icon="chevronRight"
+          />
+
+          <StatCard
+            label="Loyalty Points"
+            value={profile?.loyalty_points ?? 0}
+            sub={profile?.membership_tier || 'Standard'}
+            icon="star"
+          />
+
+          <StatCard
+            label="Total Spent"
+            value={
+              summary.totalSpentInr == null
+                ? 'A$0'
+                : `A$${Number(
+                    summary.totalSpentInr
+                  ).toLocaleString('en-AU')}`
+            }
+            sub="Paid booking total"
+            icon="payment"
+          />
+        </div>
+
+        {/* ───────────── UPCOMING RESERVATION ───────────── */}
+        <div
+          className="ga-card"
+          style={{
+            padding: '26px 28px',
+            marginBottom: 26
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              letterSpacing: '0.14em',
+              color: DS.c.gold,
+              textTransform: 'uppercase',
+              fontWeight: 600,
+              marginBottom: 8
+            }}
+          >
+            Upcoming Reservation
+          </div>
+
+          {upcomingBooking ? (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 20
+              }}
+            >
               <div>
-                <div style={{ fontWeight: 600, fontSize: 16 }}>{customerName}</div>
-                <div style={{ fontSize: 12, color: DS.c.textMuted }}>{session?.user.email}</div>
+                <h2
+                  style={{
+                    fontFamily: DS.f.serif,
+                    color: DS.c.text,
+                    fontSize: 25,
+                    marginBottom: 7
+                  }}
+                >
+                  {upcomingBooking.room_type}
+                </h2>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 18,
+                    flexWrap: 'wrap',
+                    fontSize: 13,
+                    color: DS.c.textMuted
+                  }}
+                >
+                  <span>
+                    Check-in: <strong>{formatDate(upcomingBooking.check_in_date)}</strong>
+                  </span>
+
+                  <span>
+                    Check-out: <strong>{formatDate(upcomingBooking.check_out_date)}</strong>
+                  </span>
+
+                  <span>
+                    Booking: <strong>{upcomingBooking.booking_ref}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <Badge
+                status={upcomingBooking.booking_status}
+                text={String(
+                  upcomingBooking.booking_status || ''
+                ).replaceAll('_', ' ')}
+              />
+            </div>
+          ) : (
+            <div>
+              <h2
+                style={{
+                  fontFamily: DS.f.serif,
+                  fontSize: 23,
+                  marginBottom: 6
+                }}
+              >
+                No upcoming stay
+              </h2>
+
+              <p
+                style={{
+                  color: DS.c.textMuted,
+                  fontSize: 13,
+                  marginBottom: 16
+                }}
+              >
+                You don't currently have an active reservation.
+              </p>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setPage('rooms')}
+              >
+                Explore Rooms
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Cancellation Error */}
+        {cancelError && (
+          <div
+            style={{
+              background: DS.c.dangerBg,
+              color: DS.c.danger,
+              padding: '12px 16px',
+              borderRadius: DS.r.md,
+              marginBottom: 20,
+              fontSize: 13
+            }}
+          >
+            {cancelError}
+          </div>
+        )}
+
+        {/* ───────────── BOOKINGS + PROFILE ───────────── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) 300px',
+            gap: 20
+          }}
+        >
+
+          {/* My Bookings */}
+          <div
+            className="ga-card"
+            style={{
+              overflow: 'hidden'
+            }}
+          >
+            <div
+              style={{
+                padding: '18px 22px',
+                borderBottom: `1px solid ${DS.c.border}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    fontFamily: DS.f.serif,
+                    fontSize: 21,
+                    marginBottom: 3
+                  }}
+                >
+                  My Bookings
+                </h3>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: DS.c.textMuted
+                  }}
+                >
+                  View and manage your reservations
+                </div>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => setPage('booking')}
+              >
+                + New Booking
+              </Button>
+            </div>
+
+            {bookings.length === 0 && !loading ? (
+              <div
+                style={{
+                  padding: '45px 20px',
+                  textAlign: 'center'
+                }}
+              >
+                <div
+                  style={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: '50%',
+                    background: DS.c.beigeLight,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 14px'
+                  }}
+                >
+                  <Icon
+                    name="booking"
+                    size={22}
+                    color={DS.c.gold}
+                  />
+                </div>
+
+                <h3
+                  style={{
+                    fontFamily: DS.f.serif,
+                    fontSize: 19,
+                    marginBottom: 5
+                  }}
+                >
+                  No bookings yet
+                </h3>
+
+                <p
+                  style={{
+                    color: DS.c.textMuted,
+                    fontSize: 13,
+                    marginBottom: 16
+                  }}
+                >
+                  Your hotel reservations will appear here.
+                </p>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setPage('rooms')}
+                >
+                  Book Your First Stay
+                </Button>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="ga-table">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Room</th>
+                      <th>Check-In</th>
+                      <th>Check-Out</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {bookings.map(booking => (
+                      <tr key={booking.booking_id}>
+
+                        <td
+                          style={{
+                            fontFamily: DS.f.serif,
+                            fontWeight: 600,
+                            color: DS.c.gold
+                          }}
+                        >
+                          {booking.booking_ref}
+                        </td>
+
+                        <td>
+                          {booking.room_type || '—'}
+                        </td>
+
+                        <td>
+                          {formatDate(booking.check_in_date)}
+                        </td>
+
+                        <td>
+                          {formatDate(booking.check_out_date)}
+                        </td>
+
+                        <td>
+                          <Badge
+                            status={booking.booking_status}
+                            text={String(
+                              booking.booking_status || ''
+                            ).replaceAll('_', ' ')}
+                          />
+                        </td>
+
+                        <td>
+                          {canCancelBooking(booking) ? (
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() =>
+                                setCancelTarget(booking)
+                              }
+                              style={{
+                                color: DS.c.danger
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          ) : (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: DS.c.textMuted
+                              }}
+                            >
+                              —
+                            </span>
+                          )}
+                        </td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ───────────── PROFILE ───────────── */}
+          <div
+            className="ga-card"
+            style={{
+              padding: '22px'
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                color: DS.c.textMuted,
+                marginBottom: 16
+              }}
+            >
+              Guest Profile
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 13,
+                marginBottom: 20
+              }}
+            >
+              <div
+                style={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${DS.c.gold}, ${DS.c.goldDark})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: DS.f.serif,
+                  fontSize: 21,
+                  fontWeight: 600,
+                  color: DS.c.navy,
+                  flexShrink: 0
+                }}
+              >
+                {customerInitial}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 15
+                  }}
+                >
+                  {customerName}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: DS.c.textMuted,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  {session?.user?.email || '—'}
+                </div>
               </div>
             </div>
-            {[["Phone", session?.user.phone || '—'], ['City', profile?.city || '—'], ['Member Since', session?.user ? new Date().toLocaleDateString('en-IN') : '—'], ['Loyalty Points', profile?.loyalty_points ?? '—']].map(([l, value]) => (
-              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${DS.c.borderLight}`, fontSize: 13 }}>
-                <span style={{ color: DS.c.textMuted }}>{l}</span><span style={{ fontWeight: 500 }}>{value}</span>
+
+            {[
+              ['Phone', session?.user?.phone || '—'],
+              ['City', profile?.city || '—'],
+              [
+                'Membership',
+                profile?.membership_tier || 'Standard'
+              ],
+              [
+                'Loyalty Points',
+                profile?.loyalty_points ?? 0
+              ]
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  padding: '9px 0',
+                  borderBottom: `1px solid ${DS.c.borderLight}`,
+                  fontSize: 12
+                }}
+              >
+                <span
+                  style={{
+                    color: DS.c.textMuted
+                  }}
+                >
+                  {label}
+                </span>
+
+                <span
+                  style={{
+                    fontWeight: 500,
+                    textAlign: 'right'
+                  }}
+                >
+                  {value}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {/* ───────────── CANCEL CONFIRMATION MODAL ───────────── */}
+      <Modal
+        open={!!cancelTarget}
+        onClose={() => {
+          if (cancelling === null) {
+            setCancelTarget(null);
+            setCancelError('');
+          }
+        }}
+        title="Cancel Booking"
+        width={460}
+      >
+        {cancelTarget && (
+          <div>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: '50%',
+                background: DS.c.dangerBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16
+              }}
+            >
+              <Icon
+                name="trash"
+                size={22}
+                color={DS.c.danger}
+              />
+            </div>
+
+            <h3
+              style={{
+                fontFamily: DS.f.serif,
+                fontSize: 21,
+                marginBottom: 8
+              }}
+            >
+              Are you sure?
+            </h3>
+
+            <p
+              style={{
+                color: DS.c.textMuted,
+                fontSize: 13,
+                lineHeight: 1.6,
+                marginBottom: 18
+              }}
+            >
+              You are about to cancel booking{' '}
+              <strong>{cancelTarget.booking_ref}</strong>{' '}
+              for {cancelTarget.room_type}. This will update the
+              reservation status in the hotel system.
+            </p>
+
+            <div
+              style={{
+                background: DS.c.beigeLight,
+                borderRadius: DS.r.md,
+                padding: '12px 14px',
+                marginBottom: 20
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: 6,
+                  fontSize: 12
+                }}
+              >
+                <span style={{ color: DS.c.textMuted }}>
+                  Check-in
+                </span>
+
+                <strong>
+                  {formatDate(cancelTarget.check_in_date)}
+                </strong>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: 12
+                }}
+              >
+                <span style={{ color: DS.c.textMuted }}>
+                  Check-out
+                </span>
+
+                <strong>
+                  {formatDate(cancelTarget.check_out_date)}
+                </strong>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 10
+              }}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={cancelling !== null}
+                onClick={() => {
+                  setCancelTarget(null);
+                  setCancelError('');
+                }}
+              >
+                Keep Booking
+              </Button>
+
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={cancelling !== null}
+                onClick={confirmCancellation}
+              >
+                {cancelling !== null
+                  ? 'Cancelling...'
+                  : 'Yes, Cancel Booking'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
     </div>
   );
 };
