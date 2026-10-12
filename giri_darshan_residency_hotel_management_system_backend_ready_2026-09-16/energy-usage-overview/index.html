@@ -1,841 +1,789 @@
 <!DOCTYPE html>
+
 <html lang="en">
- 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giri Darshan Residency - Energy Usage Overview</title>
-    <link rel="stylesheet" href="main.css?v=responsive1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hotel Energy Dashboard | Energy Intelligence</title>
+<link href="main.css" rel="stylesheet"/>
 </head>
- 
 <body>
- 
 <div class="dashboard-container">
- 
-    <!-- MAIN CONTENT -->
- 
-    <main class="main-content">
- 
-        <!-- TOP BAR -->
- 
-        <div class="top-bar">
- 
-            <div>
- 
-                <p class="dashboard-label">
-                    Management Dashboard
-                </p>
- 
-                <h1>
-                    Energy Usage Overview
-                </h1>
- 
-                <p class="dashboard-note">
-                    Monitor room energy usage, equipment faults
-                    and sensor performance in real time.
-                </p>
- 
-            </div>
- 
-            <div class="top-actions">
- 
-                <div class="search-box">
-                    <input
-                        type="text"
-                        id="roomSearch"
-                        placeholder="Search room...">
-                    <div class="search-hint" id="searchHint"></div>
-                </div>
- 
-            </div>
- 
-        </div>
- 
-        <!-- STATS CARDS -->
- 
-        <div class="stats-cards">
- 
-            <div class="card">
-                <p class="card-title">Total Energy Usage</p>
-                <h3>0 kWh</h3>
-                <p class="card-subtext">
-                    Recorded usage in the last 24 hours
-                </p>
-            </div>
- 
-            <div class="card">
-                <p class="card-title">Faulty Equipment</p>
-                <h3>0 Issues</h3>
-                <p class="card-subtext">
-                    Maintenance required
-                </p>
-            </div>
- 
-            <div class="card">
-                <p class="card-title">Sensor Health</p>
-                <h3>0%</h3>
-                <p class="card-subtext">
-                    Sensors operating normally
-                </p>
-            </div>
- 
-            <div class="card">
-                <p class="card-title">Highest Usage Room</p>
-                <h3>No room loaded</h3>
-                <p class="card-subtext">
-                    No energy records loaded
-                </p>
-            </div>
- 
-        </div>
- 
-        <!-- ENERGY SECTION -->
- 
-        <section class="energy-main-section">
- 
-            <!-- FLOOR PLAN -->
- 
-            <div class="floor-plan-card">
- 
-                <div class="section-title-row">
- 
-                    <div>
-                        <h3>Room Energy Floor Plan</h3>
- 
-                        <p>
-                            Hover over a room to inspect
-                            live energy sensor information.
-                        </p>
-                    </div>
- 
-                    <span class="live-badge">
-                        Database Ready
-                    </span>
- 
-                </div>
- 
-                <div class="energy-alert">
-                    <strong>Alert:</strong>
-                    No room loaded currently records the highest energy usage — 0 kWh. Connect energy records to show alerts.
-                </div>
- 
-                <!-- FLOOR NAVIGATION -->
- 
-                <div class="floor-navigation">
-                    <button onclick="showFloor(1)" id="floorBtn1" class="floor-btn active-floor-btn">
+<!-- MAIN CONTENT -->
+<main class="main-content">
+<!-- TOP BAR -->
+<div class="top-bar">
+<div>
+<p class="dashboard-label">BUILDING ENERGY</p>
+<h1>Energy Overview</h1>
+<p class="dashboard-note">Review consumption, compare floors and identify high-usage rooms.</p>
+</div>
+<div class="top-actions">
+<div class="search-box">
+<svg class="search-icon" fill="none" height="16" viewbox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+<circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle>
+<line stroke="currentColor" stroke-linecap="round" stroke-width="2" x1="16.65" x2="21" y1="16.65" y2="21"></line>
+</svg>
+<input aria-label="Search for a room" id="roomSearch" placeholder="Search room..." type="text"/>
+<button aria-label="Clear room search" class="search-clear" id="clearSearch" type="button">×</button>
+<div class="search-hint" id="searchHint"></div>
+</div>
+</div>
+</div>
+<!-- STATS CARDS -->
+<section aria-label="Building energy at a glance" class="executive-overview">
+<div class="overview-primary">
+<div class="overview-main-label"><span aria-hidden="true" class="overview-energy-icon">↗</span><span>Total energy usage</span><span class="overview-period" id="overviewPeriod">7 Days</span></div>
+<div class="overview-total"><strong id="statTotal">4,476</strong><span>kWh</span></div>
+<div class="overview-performance"><span class="overview-trend" id="overviewTrend">↓ 3.1%</span><span>vs previous period</span></div>
+<div class="overview-footer"><span id="overviewPeak">Peak: Friday</span>
+<svg aria-label="Energy usage trend" class="overview-sparkline" preserveaspectratio="none" role="img" viewbox="0 0 140 36"><polyline fill="none" points="0,28 23,25 46,30 70,15 92,20 115,12 140,8" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></polyline></svg>
+</div>
+</div>
+<div class="overview-secondary">
+<div class="overview-secondary-header"><span>Energy at a glance</span><span class="overview-header-line"></span></div>
+<div class="overview-metrics">
+<div class="overview-metric"><span class="overview-metric-icon icon-cost">$</span><span class="overview-metric-title">Estimated cost</span><strong id="statCost">$895.20</strong><small>Selected period · AUD</small></div>
+<div class="overview-metric"><span class="overview-metric-icon icon-floor">▥</span><span class="overview-metric-title">Highest usage floor</span><strong id="statTopFloor">Floor 2</strong><small>Largest share of usage</small></div>
+<div class="overview-metric"><span class="overview-metric-icon icon-room">↗</span><span class="overview-metric-title">Highest usage room</span><strong id="statTopRoom">205</strong><small id="statTopRoomUsage">56 kWh today</small></div>
+</div>
+</div>
+</section>
+<!-- ENERGY SECTION -->
+<section class="energy-main-section">
+<!-- FLOOR PLAN -->
+<div class="floor-plan-card">
+<div class="section-title-row">
+<div>
+<h3>Room Energy Floor Plan</h3>
+<p>Select a room to view energy usage and status.</p>
+</div>
+<span class="live-badge">Room overview</span>
+</div>
+<div class="energy-alert">Energy watch: Room 205 has the highest room reading today (56 kWh). Select it to view details.</div>
+<!-- FLOOR NAVIGATION -->
+<div class="floor-navigation">
+<button class="floor-btn active-floor-btn" id="floorBtn1" onclick="showFloor(1)" type="button">
                         Floor 1
                     </button>
-                    <button onclick="showFloor(2)" id="floorBtn2" class="floor-btn">
+<button class="floor-btn" id="floorBtn2" onclick="showFloor(2)" type="button">
                         Floor 2
                     </button>
-                    <button onclick="showFloor(3)" id="floorBtn3" class="floor-btn">
+<button class="floor-btn" id="floorBtn3" onclick="showFloor(3)" type="button">
                         Floor 3
                     </button>
-                </div>
- 
-                <div class="floor-plan-wrapper">
- 
-                    <!-- ========================
+</div>
+<!-- STATUS LEGEND -->
+<div class="status-legend">
+<span class="legend-item"><span class="legend-dot legend-dot-low"></span>Normal</span>
+<span class="legend-item"><span class="legend-dot legend-dot-medium"></span>Medium</span>
+<span class="legend-item"><span class="legend-dot legend-dot-high"></span>High</span>
+</div>
+<div class="floor-plan-wrapper">
+<!-- ========================
                          FLOOR 1
                     ========================= -->
- 
-                    <div class="floor-plan" id="floor1">
- 
-                        <div class="floor-label">Floor 1</div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 001" data-floor="1"
-                            onmouseover="showRoomDetails(
-                            'Room 001',
-                            'S-001',
-                            '18 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage is within normal range.',
-                            '18%')">
-                                <span>Room 001</span>
-                                <small>18 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 002" data-floor="1"
-                            onmouseover="showRoomDetails(
-                            'Room 002',
-                            'S-002',
-                            '32 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '32%')">
-                                <span>Room 002</span>
-                                <small>32 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Party Hall" data-floor="1"
-                            onmouseover="showRoomDetails(
-                            'Party Hall',
-                            'S-PH1',
-                            '22 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Energy usage stable in Party Hall.',
-                            '22%')">
-                                <span>Party Hall</span>
-                                <small>22 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                    </div>
- 
-                    <!-- ========================
+<div class="floor-plan" id="floor1">
+<div class="floor-label">Floor 1</div>
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="1" data-kwh="18" data-note="Usage is within normal range." data-room="Room 001" data-sensor="S-001" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 001</span>
+<small>18 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="1" data-kwh="32" data-note="Moderate energy consumption." data-room="Room 002" data-sensor="S-002" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 002</span>
+<small>32 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="1" data-kwh="22" data-note="Energy usage stable in Party Hall." data-room="Party Hall" data-sensor="S-PH1" data-sensor-status="Online" data-usage-status="normal">
+<span>Party Hall</span>
+<small>22 kWh</small>
+</div>
+</div>
+</div>
+<!-- ========================
                          FLOOR 2
                     ========================= -->
- 
-                    <div class="floor-plan" id="floor2" style="display:none;">
- 
-                        <div class="floor-label">Floor 2</div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 201" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 201',
-                            'S-201',
-                            '14 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '14%')">
-                                <span>Room 201</span>
-                                <small>14 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 202" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 202',
-                            'S-202',
-                            '31 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '31%')">
-                                <span>Room 202</span>
-                                <small>31 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 203" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 203',
-                            'S-203',
-                            '19 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage within normal range.',
-                            '19%')">
-                                <span>Room 203</span>
-                                <small>19 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 204" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 204',
-                            'S-204',
-                            '17 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '17%')">
-                                <span>Room 204</span>
-                                <small>17 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-high active-room" data-room="No room loaded" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'No room loaded',
-                            'S-205',
-                            '0 kWh',
-                            'High Usage',
-                            'Warning',
-                            'High energy consumption detected. Inspection recommended.',
-                            '56%')">
-                                <span>No room loaded</span>
-                                <small>0 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 206" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 206',
-                            'S-206',
-                            '28 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '28%')">
-                                <span>Room 206</span>
-                                <small>28 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                        <div class="corridor">
+<div class="floor-plan" id="floor2" style="display:none;">
+<div class="floor-label">Floor 2</div>
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="14" data-note="Low energy usage." data-room="Room 201" data-sensor="S-201" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 201</span>
+<small>14 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="2" data-kwh="31" data-note="Moderate energy consumption." data-room="Room 202" data-sensor="S-202" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 202</span>
+<small>31 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="19" data-note="Usage within normal range." data-room="Room 203" data-sensor="S-203" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 203</span>
+<small>19 kWh</small>
+</div>
+</div>
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="17" data-note="Low energy usage." data-room="Room 204" data-sensor="S-204" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 204</span>
+<small>17 kWh</small>
+</div>
+<div class="room-block room-high active-room" data-filter-status="normal" data-floor="2" data-kwh="56" data-note="High energy consumption detected. Inspection recommended." data-room="Room 205" data-sensor="S-205" data-sensor-status="Warning" data-usage-status="high">
+<span>Room 205</span>
+<small>56 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="2" data-kwh="28" data-note="Moderate energy consumption." data-room="Room 206" data-sensor="S-206" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 206</span>
+<small>28 kWh</small>
+</div>
+</div>
+<div class="corridor">
                             CORRIDOR
                         </div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 207" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 207',
-                            'S-207',
-                            '16 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '16%')">
-                                <span>Room 207</span>
-                                <small>16 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 208" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 208',
-                            'S-208',
-                            '33 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '33%')">
-                                <span>Room 208</span>
-                                <small>33 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 209" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 209',
-                            'S-209',
-                            '20 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage within normal range.',
-                            '20%')">
-                                <span>Room 209</span>
-                                <small>20 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-medium" data-room="Room 210" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 210',
-                            'S-210',
-                            '27 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '27%')">
-                                <span>Room 210</span>
-                                <small>27 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 211" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 211',
-                            'S-211',
-                            '13 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '13%')">
-                                <span>Room 211</span>
-                                <small>13 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 212" data-floor="2"
-                            onmouseover="showRoomDetails(
-                            'Room 212',
-                            'S-212',
-                            '21 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage within normal range.',
-                            '21%')">
-                                <span>Room 212</span>
-                                <small>21 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                    </div>
- 
-                    <!-- ========================
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="16" data-note="Low energy usage." data-room="Room 207" data-sensor="S-207" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 207</span>
+<small>16 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="2" data-kwh="33" data-note="Moderate energy consumption." data-room="Room 208" data-sensor="S-208" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 208</span>
+<small>33 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="20" data-note="Usage within normal range." data-room="Room 209" data-sensor="S-209" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 209</span>
+<small>20 kWh</small>
+</div>
+</div>
+<div class="floor-row">
+<div class="room-block room-medium" data-filter-status="normal" data-floor="2" data-kwh="27" data-note="Moderate energy consumption." data-room="Room 210" data-sensor="S-210" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 210</span>
+<small>27 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="13" data-note="Low energy usage." data-room="Room 211" data-sensor="S-211" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 211</span>
+<small>13 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="2" data-kwh="21" data-note="Usage within normal range." data-room="Room 212" data-sensor="S-212" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 212</span>
+<small>21 kWh</small>
+</div>
+</div>
+</div>
+<!-- ========================
                          FLOOR 3
                     ========================= -->
- 
-                    <div class="floor-plan" id="floor3" style="display:none;">
- 
-                        <div class="floor-label">Floor 3</div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 301" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 301',
-                            'S-301',
-                            '15 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '15%')">
-                                <span>Room 301</span>
-                                <small>15 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 302" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 302',
-                            'S-302',
-                            '30 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '30%')">
-                                <span>Room 302</span>
-                                <small>30 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-high" data-room="Room 303" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 303',
-                            'S-303',
-                            '48 kWh',
-                            'High Usage',
-                            'Warning',
-                            'High energy consumption detected.',
-                            '48%')">
-                                <span>Room 303</span>
-                                <small>48 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 304" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 304',
-                            'S-304',
-                            '18 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage within normal range.',
-                            '18%')">
-                                <span>Room 304</span>
-                                <small>18 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 305" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 305',
-                            'S-305',
-                            '12 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '12%')">
-                                <span>Room 305</span>
-                                <small>12 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 306" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 306',
-                            'S-306',
-                            '35 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '35%')">
-                                <span>Room 306</span>
-                                <small>35 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                        <div class="corridor">
+<div class="floor-plan" id="floor3" style="display:none;">
+<div class="floor-label">Floor 3</div>
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="15" data-note="Low energy usage." data-room="Room 301" data-sensor="S-301" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 301</span>
+<small>15 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="3" data-kwh="30" data-note="Moderate energy consumption." data-room="Room 302" data-sensor="S-302" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 302</span>
+<small>30 kWh</small>
+</div>
+<div class="room-block room-high" data-filter-status="normal" data-floor="3" data-kwh="48" data-note="High energy consumption detected." data-room="Room 303" data-sensor="S-303" data-sensor-status="Warning" data-usage-status="high">
+<span>Room 303</span>
+<small>48 kWh</small>
+</div>
+</div>
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="18" data-note="Usage within normal range." data-room="Room 304" data-sensor="S-304" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 304</span>
+<small>18 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="12" data-note="Low energy usage." data-room="Room 305" data-sensor="S-305" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 305</span>
+<small>12 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="3" data-kwh="35" data-note="Moderate energy consumption." data-room="Room 306" data-sensor="S-306" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 306</span>
+<small>35 kWh</small>
+</div>
+</div>
+<div class="corridor">
                             CORRIDOR
                         </div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-medium" data-room="Room 307" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 307',
-                            'S-307',
-                            '29 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '29%')">
-                                <span>Room 307</span>
-                                <small>29 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 308" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 308',
-                            'S-308',
-                            '11 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '11%')">
-                                <span>Room 308</span>
-                                <small>11 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 309" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 309',
-                            'S-309',
-                            '22 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage within normal range.',
-                            '22%')">
-                                <span>Room 309</span>
-                                <small>22 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                        <div class="floor-row">
- 
-                            <div class="room-block room-low" data-room="Room 310" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 310',
-                            'S-310',
-                            '16 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Low energy usage.',
-                            '16%')">
-                                <span>Room 310</span>
-                                <small>16 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-medium" data-room="Room 311" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 311',
-                            'S-311',
-                            '34 kWh',
-                            'Medium Usage',
-                            'Online',
-                            'Moderate energy consumption.',
-                            '34%')">
-                                <span>Room 311</span>
-                                <small>34 kWh</small>
-                            </div>
- 
-                            <div class="room-block room-low" data-room="Room 312" data-floor="3"
-                            onmouseover="showRoomDetails(
-                            'Room 312',
-                            'S-312',
-                            '19 kWh',
-                            'Normal Usage',
-                            'Online',
-                            'Usage within normal range.',
-                            '19%')">
-                                <span>Room 312</span>
-                                <small>19 kWh</small>
-                            </div>
- 
-                        </div>
- 
-                    </div>
- 
-                    <!-- DETAILS PANEL -->
- 
-                    <div class="room-detail-panel">
- 
-                        <p class="panel-label">
-                            Selected Room
-                        </p>
- 
-                        <h3 id="panelRoom">
-                            Hover over a room
-                        </h3>
- 
-                        <div class="panel-info-row">
-                            <span>Sensor ID</span>
-                            <strong id="panelSensor">---</strong>
-                        </div>
- 
-                        <div class="panel-info-row">
-                            <span>Energy Used</span>
-                            <strong id="panelEnergy">---</strong>
-                        </div>
- 
-                        <div class="panel-info-row">
-                            <span>Status</span>
-                            <strong id="panelStatus">---</strong>
-                        </div>
- 
-                        <div class="panel-info-row">
-                            <span>Sensor Status</span>
-                            <strong id="panelSensorStatus">---</strong>
-                        </div>
- 
-                        <div class="panel-progress">
-                            <div id="panelBar"></div>
-                        </div>
- 
-                        <p class="panel-note" id="panelNote">
-                            Move cursor over a room.
-                        </p>
- 
-                    </div>
- 
-                </div>
- 
-            </div>
- 
-            <!-- ENERGY SUMMARY -->
- 
-            <div class="energy-summary-card">
- 
-                <h3>Energy Summary</h3>
- 
-                <div class="summary-box">
-                    <h2>0 kWh</h2>
-                    <p>Total building energy today</p>
-                </div>
- 
-                <div class="summary-box">
-                    <strong>Highest Usage</strong>
-                    <p>No room loaded</p>
-                    <small>0 kWh</small>
-                </div>
- 
-                <div class="summary-box">
-                    <strong>Sensor Health</strong>
-                    <p>0%</p>
-                </div>
- 
-                <div class="summary-box">
-                    <strong>Equipment Faults</strong>
-                    <p>4 Active Issues</p>
-                </div>
- 
-            </div>
- 
-        </section>
- 
-        <!-- TABLES -->
- 
-        <section class="dashboard-tables-grid">
- 
-            <div class="mini-table-card">
-                <h3>Equipment Faults</h3>
-                <button class="floor-btn" onclick="reportFault()">Report Fault</button>
-                <p id="faultError" role="alert"></p>
-                <table><thead><tr><th>Item</th><th>Status</th></tr></thead><tbody id="faultRows"></tbody></table>
-            </div>
- 
-            <div class="mini-table-card">
-                <h3>Sensor Status</h3>
- 
-                <table>
-                    <tr>
-                        <th>Sensor</th>
-                        <th>Status</th>
-                    </tr>
- 
-                    <tr><td>S-101</td><td>Online</td></tr>
-                    <tr><td>S-102</td><td>Online</td></tr>
-                    <tr><td>S-103</td><td>Warning</td></tr>
-                </table>
-            </div>
- 
-        </section>
- 
-    </main>
- 
+<div class="floor-row">
+<div class="room-block room-medium" data-filter-status="normal" data-floor="3" data-kwh="29" data-note="Moderate energy consumption." data-room="Room 307" data-sensor="S-307" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 307</span>
+<small>29 kWh</small>
 </div>
- 
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="11" data-note="Low energy usage." data-room="Room 308" data-sensor="S-308" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 308</span>
+<small>11 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="22" data-note="Usage within normal range." data-room="Room 309" data-sensor="S-309" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 309</span>
+<small>22 kWh</small>
+</div>
+</div>
+<div class="floor-row">
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="16" data-note="Low energy usage." data-room="Room 310" data-sensor="S-310" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 310</span>
+<small>16 kWh</small>
+</div>
+<div class="room-block room-medium" data-filter-status="normal" data-floor="3" data-kwh="34" data-note="Moderate energy consumption." data-room="Room 311" data-sensor="S-311" data-sensor-status="Online" data-usage-status="medium">
+<span>Room 311</span>
+<small>34 kWh</small>
+</div>
+<div class="room-block room-low" data-filter-status="normal" data-floor="3" data-kwh="19" data-note="Usage within normal range." data-room="Room 312" data-sensor="S-312" data-sensor-status="Online" data-usage-status="normal">
+<span>Room 312</span>
+<small>19 kWh</small>
+</div>
+</div>
+</div>
+<!-- DETAILS PANEL -->
+<div class="room-detail-panel">
+<p class="panel-label">Selected room · Today</p>
+<h3 id="panelRoom">Select a room</h3>
+<div class="panel-info-row">
+<span>Sensor ID</span>
+<strong id="panelSensor">---</strong>
+</div>
+<div class="panel-info-row">
+<span>Energy Used</span>
+<strong id="panelEnergy">---</strong>
+</div>
+<div class="panel-info-row">
+<span>Status</span>
+<strong id="panelStatus">---</strong>
+</div>
+<div class="panel-info-row">
+<span>Sensor Status</span>
+<strong id="panelSensorStatus">---</strong>
+</div>
+<div class="panel-progress">
+<div id="panelBar"></div>
+</div>
+<p class="panel-note" id="panelNote">Select a room to see its energy reading.</p>
+</div>
+</div>
+</div>
+<!-- ENERGY SUMMARY -->
+<div class="energy-summary-card">
+<h3>Building Energy Summary</h3>
+<div class="summary-box"><h2><span id="summaryTotal">4,476</span> <span class="unit">kWh</span></h2><p id="summaryPeriod">Total for 7 Days</p><small class="cost-line" id="summaryCost">≈ $895.20 estimated cost</small></div>
+<div class="summary-box">
+<strong>Top Rooms · Today</strong>
+<ol class="rank-list">
+<li><span class="rank-num">1</span>Room 205<span class="rank-value">56 kWh</span></li>
+<li><span class="rank-num">2</span>Room 303<span class="rank-value">48 kWh</span></li>
+<li><span class="rank-num">3</span>Room 306<span class="rank-value">35 kWh</span></li>
+</ol>
+</div>
+<div class="summary-box"><strong>Period Trend</strong><p id="summaryTrend">↓ 3.1% vs previous period</p></div>
+<div class="summary-box"><strong>Potential Savings</strong><p id="summarySavings">$89.52</p><small>At the selected reduction scenario</small></div>
+</div>
+</section>
+<!-- ENERGY VIEW CONTROLS -->
+<section class="dashboard-filters-card">
+<div class="filter-heading">
+<div>
+<h3>Dashboard Filters</h3>
+<p>Adjust the dashboard view by time period and room status.</p>
+</div>
+<span class="filter-result" id="filterResult">Showing all rooms</span>
+</div>
+<div class="filter-controls">
+<div class="filter-group">
+<label for="periodFilter">Time period</label>
+<select id="periodFilter">
+<option value="today">Today</option>
+<option selected="" value="7days">7 Days</option>
+<option value="30days">30 Days</option>
+</select>
+</div>
+<div class="filter-group">
+<label for="statusFilter">Room status</label>
+<select id="statusFilter">
+<option selected="" value="all">All Rooms</option>
+<option value="normal">Normal</option>
+<option value="medium">Medium Usage</option>
+<option value="high">High Usage</option>
+<option value="warning">Sensor Warning</option>
+</select>
+</div>
+<button class="filter-reset" id="resetFilters" type="button">Reset Filters</button>
+</div>
+</section>
+<!-- PERIOD COMPARISON -->
+<section class="week8-analysis">
+<div class="enhancement-card comparison-card">
+<div class="enhancement-header">
+<div>
+<h3>Energy Comparison</h3>
+<p>Selected period compared with the previous period.</p>
+</div>
+<span class="period-badge" id="comparisonPeriodBadge">7 Days</span>
+</div>
+<div class="comparison-main">
+<div class="comparison-total">
+<span>Current usage</span>
+<strong id="comparisonCurrent">171 kWh</strong>
+</div>
+<div class="comparison-arrow" id="comparisonArrow">↓</div>
+<div class="comparison-total previous">
+<span>Previous usage</span>
+<strong id="comparisonPrevious">182 kWh</strong>
+</div>
+<div class="comparison-change" id="comparisonChange">
+<strong>6% lower</strong>
+<span>11 kWh difference</span>
+</div>
+</div>
+<div class="floor-comparison">
+<div class="floor-comparison-heading">
+<strong>Usage by floor</strong>
+<span id="comparisonCost">Estimated cost: $34.20</span>
+</div>
+<div class="floor-compare-row">
+<span>Floor 1</span>
+<div class="floor-compare-track">
+<span id="floor1Compare" style="width:24%;"></span>
+</div>
+<strong id="floor1CompareValue">42 kWh</strong>
+</div>
+<div class="floor-compare-row">
+<span>Floor 2</span>
+<div class="floor-compare-track">
+<span id="floor2Compare" style="width:100%;"></span>
+</div>
+<strong id="floor2CompareValue">71 kWh</strong>
+</div>
+<div class="floor-compare-row">
+<span>Floor 3</span>
+<div class="floor-compare-track">
+<span id="floor3Compare" style="width:82%;"></span>
+</div>
+<strong id="floor3CompareValue">58 kWh</strong>
+</div>
+</div>
+</div>
+</section>
+<!-- ADDITIONAL DASHBOARD FEATURES -->
+<section class="dashboard-enhancements">
+<div class="enhancement-card energy-history-card">
+<div class="enhancement-header">
+<div>
+<h3>Energy Usage History</h3>
+<p>Energy usage across the selected period.</p>
+</div>
+<span class="period-badge">7 Days</span>
+</div>
+<div class="history-chart">
+<div class="chart-y-labels">
+<span>350</span><span>250</span><span>150</span><span>50</span><span>0</span>
+</div>
+<div class="chart-area">
+<svg aria-label="Seven day energy usage chart" preserveaspectratio="none" viewbox="0 0 700 230">
+<line class="chart-grid-line" x1="0" x2="700" y1="20" y2="20"></line>
+<line class="chart-grid-line" x1="0" x2="700" y1="75" y2="75"></line>
+<line class="chart-grid-line" x1="0" x2="700" y1="130" y2="130"></line>
+<line class="chart-grid-line" x1="0" x2="700" y1="185" y2="185"></line>
+<polyline class="history-line" points="10,160 120,135 230,150 340,92 450,110 560,55 690,72"></polyline>
+<polygon class="history-area" points="10,160 120,135 230,150 340,92 450,110 560,55 690,72 690,205 10,205"></polygon>
+<circle class="chart-point" cx="10" cy="160" r="5"></circle>
+<circle class="chart-point" cx="120" cy="135" r="5"></circle>
+<circle class="chart-point" cx="230" cy="150" r="5"></circle>
+<circle class="chart-point" cx="340" cy="92" r="5"></circle>
+<circle class="chart-point" cx="450" cy="110" r="5"></circle>
+<circle class="chart-point" cx="560" cy="55" r="5"></circle>
+<circle class="chart-point" cx="690" cy="72" r="5"></circle>
+</svg>
+<div class="chart-x-labels">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+</div>
+</div>
+</div>
+<div class="history-summary">
+<div><span>Average</span><strong>238 kWh</strong></div>
+<div><span>Peak Day</span><strong>Sat</strong></div>
+<div><span>Change</span><strong class="positive-text">↓ 6%</strong></div>
+</div>
+</div>
+<div class="enhancement-card efficiency-card">
+<div class="enhancement-header">
+<div>
+<h3>Energy Efficiency</h3>
+<p>Usage categories across all rooms.</p>
+</div>
+<span class="efficiency-score">84</span>
+</div>
+<div class="score-track">
+<div class="score-fill" style="width:84%;"></div>
+</div>
+<div class="score-labels"><span>Needs attention</span><span>Good</span><span>Excellent</span></div>
+<div class="efficiency-items">
+<div class="efficiency-item">
+<span><span class="mini-status good"></span>Normal rooms</span>
+<strong>82%</strong>
+</div>
+<div class="efficiency-item">
+<span><span class="mini-status medium"></span>Medium usage</span>
+<strong>12%</strong>
+</div>
+<div class="efficiency-item">
+<span><span class="mini-status high"></span>High usage</span>
+<strong>6%</strong>
+</div>
+</div>
+<div class="efficiency-tip">
+<strong>Tip</strong>
+<span>Check Room 205 first to reduce the building's peak demand.</span>
+</div>
+</div>
+<div class="enhancement-card ranking-card">
+<div class="enhancement-header">
+<div>
+<h3>Top Energy Consumers</h3>
+<p>Rooms with the highest energy readings today.</p>
+</div>
+<span class="period-badge">Today</span>
+</div>
+<div class="ranking-list">
+<div class="ranking-row">
+<span class="rank-number">1</span>
+<div class="ranking-info"><strong>Room 205</strong><small>Floor 2</small></div>
+<div class="ranking-bar"><span style="width:100%;"></span></div>
+<strong class="ranking-value">56 kWh</strong>
+</div>
+<div class="ranking-row">
+<span class="rank-number">2</span>
+<div class="ranking-info"><strong>Room 303</strong><small>Floor 3</small></div>
+<div class="ranking-bar"><span style="width:86%;"></span></div>
+<strong class="ranking-value">48 kWh</strong>
+</div>
+<div class="ranking-row">
+<span class="rank-number">3</span>
+<div class="ranking-info"><strong>Room 306</strong><small>Floor 3</small></div>
+<div class="ranking-bar"><span style="width:63%;"></span></div>
+<strong class="ranking-value">35 kWh</strong>
+</div>
+<div class="ranking-row">
+<span class="rank-number">4</span>
+<div class="ranking-info"><strong>Room 002</strong><small>Floor 1</small></div>
+<div class="ranking-bar"><span style="width:57%;"></span></div>
+<strong class="ranking-value">32 kWh</strong>
+</div>
+</div>
+</div>
+<div class="enhancement-card alerts-card">
+<div class="enhancement-header">
+<div>
+<h3>Areas to Review</h3>
+<p>Rooms and floors with higher energy demand.</p>
+</div>
+<span class="alert-count">4 Active</span>
+</div>
+<div class="alert-list">
+<div class="alert-row alert-warning">
+<span class="alert-icon">!</span>
+<div><strong>Room 205</strong><small>Higher room demand · review cooling hours</small></div>
+
+</div>
+<div class="alert-row alert-warning">
+<span class="alert-icon">!</span>
+<div><strong>Room 303</strong><small>Elevated room use · compare daily pattern</small></div>
+
+</div>
+<div class="alert-row alert-neutral">
+<span class="alert-icon">!</span>
+<div><strong>Floor 2</strong><small>Largest floor demand · review shared loads</small></div>
+
+</div>
+<div class="alert-row alert-neutral">
+<span class="alert-icon">i</span>
+<div><strong>Room 306</strong><small>Above-average room usage · check operating hours</small></div>
+
+</div>
+</div>
+</div>
+</section>
+<!-- ENERGY OPERATIONS -->
+<section aria-labelledby="opsHeading" class="energy-operations">
+<div class="operations-header">
+<div><span class="section-kicker">BUILDING ENERGY INTELLIGENCE</span><h2 id="opsHeading">Energy Operations</h2><p>Analyse usage, spot the largest demand and explore potential reductions.</p></div>
+<div class="operations-status"><span id="sourceStatus">Building overview</span><strong id="opsPeriodBadge">7 Days</strong></div>
+</div>
+<div class="operations-grid">
+<div class="energy-load-panel">
+<div class="operations-card-heading"><div><span class="card-eyebrow">PERIOD CONSUMPTION</span><h3>Where the energy goes</h3></div><span class="load-chip">Energy insights</span></div>
+<div class="load-summary">
+<div class="load-total"><strong id="opsCurrentUsage">4,476</strong><span>kWh</span><small id="opsChange">↓ 3.1% compared with previous period</small></div>
+<div class="load-meta"><div><span>Estimated cost</span><strong id="opsCost">$895.20</strong></div><div><span>Peak interval</span><strong id="opsPeak">Friday</strong></div></div>
+</div>
+<div class="energy-distribution"><div class="distribution-heading"><strong>Energy distribution by floor</strong><span>Share of the selected period</span></div>
+<div class="operations-floor-row"><div class="operations-floor-name"><strong>Floor 1</strong><span id="floorChart1Share">12%</span></div><div class="operations-floor-track"><div class="floor-chart-fill" id="floorChart1" style="width:12%"></div></div><strong class="operations-floor-value" id="floorChart1Value">515 kWh</strong></div>
+<div class="operations-floor-row"><div class="operations-floor-name"><strong>Floor 2</strong><span id="floorChart2Share">45%</span></div><div class="operations-floor-track"><div class="floor-chart-fill floor-chart-fill-high" id="floorChart2" style="width:45%"></div></div><strong class="operations-floor-value" id="floorChart2Value">2,010 kWh</strong></div>
+<div class="operations-floor-row"><div class="operations-floor-name"><strong>Floor 3</strong><span id="floorChart3Share">44%</span></div><div class="operations-floor-track"><div class="floor-chart-fill" id="floorChart3" style="width:44%"></div></div><strong class="operations-floor-value" id="floorChart3Value">1,951 kWh</strong></div>
+</div>
+<div class="energy-insight"><span class="insight-icon">↗</span><div><strong>Priority insight</strong><p id="opsInsight">Floor 2 currently contributes the most to building energy use.</p><button class="text-action" id="inspectPriorityRoom" type="button">Inspect Room 205 →</button></div></div>
+</div>
+<div class="performance-panel">
+<div class="operations-card-heading"><div><span class="card-eyebrow">COMPARATIVE PERFORMANCE</span><h3>Performance overview</h3></div><span class="load-chip">vs previous period</span></div>
+<div class="performance-hero"><div class="performance-ring" id="performanceRing"><div class="performance-ring-inner"><strong id="performancePercent">3.1%</strong><small id="performanceDirection">less usage</small></div></div><div class="performance-copy"><span>Energy change</span><strong id="performanceDelta">144 kWh saved</strong><p id="performanceMessage">Selected period is using less energy than the previous comparable period.</p></div></div>
+<div class="performance-metrics"><div><span>Previous period</span><strong id="performancePrevious">4,620 kWh</strong></div><div><span>Daily average</span><strong id="performanceAverage">639 kWh</strong></div><div><span>Leading floor</span><strong id="performanceFloor">Floor 2 · 45%</strong></div><div><span>Data basis</span><strong id="performanceSource">Illustrative</strong></div></div>
+<p class="performance-caption">Compare the same time window; room readings relate to today.</p>
+</div>
+</div>
+<div class="operations-bottom-grid">
+<div class="operations-mini-card energy-mix-panel">
+<div class="mini-heading"><div><span class="card-eyebrow">ENERGY DEMAND DRIVERS</span><h3>Usage by service</h3></div><span class="network-count">Estimated split</span></div>
+<p class="mini-description">Estimated energy demand across main hotel services.</p>
+<div aria-label="Estimated energy mix: heating and cooling 43%, lighting 26%, hot water 20%, other 11%" class="mix-meter" role="img"><span></span><span></span><span></span><span></span></div>
+<div class="mix-rows" id="energyMixRows">
+<div class="mix-row"><span class="mix-dot mix-hvac"></span><div><strong>Heating &amp; cooling</strong><small>43% of estimated total</small></div><strong id="mix0">1,925 kWh</strong></div>
+<div class="mix-row"><span class="mix-dot mix-light"></span><div><strong>Lighting</strong><small>26% of estimated total</small></div><strong id="mix1">1,164 kWh</strong></div>
+<div class="mix-row"><span class="mix-dot mix-water"></span><div><strong>Hot water</strong><small>20% of estimated total</small></div><strong id="mix2">895 kWh</strong></div>
+<div class="mix-row"><span class="mix-dot mix-other"></span><div><strong>Other services</strong><small>11% of estimated total</small></div><strong id="mix3">492 kWh</strong></div>
+</div>
+<p class="mix-note">Service shares are estimates, not individual meter readings.</p>
+</div>
+<div class="operations-mini-card savings-panel">
+<div class="mini-heading"><div><span class="card-eyebrow">ENERGY REDUCTION SCENARIO</span><h3>Potential savings planner</h3></div><span class="issue-count savings-badge">Interactive estimate</span></div>
+<p class="mini-description">Try a reduction target and electricity price to estimate savings for the period you selected.</p>
+<div class="scenario-controls"><div class="scenario-label"><label for="reductionRange">Reduce consumption by</label><strong id="reductionLabel">10%</strong></div><input aria-label="Energy reduction target percentage" id="reductionRange" max="30" min="0" step="5" type="range" value="10"/><div class="range-markers"><span>0%</span><span>15%</span><span>30%</span></div>
+<div class="tariff-control"><label for="tariffInput">Electricity price (AUD per kWh)</label><div class="tariff-input-wrap"><span>$</span><input id="tariffInput" inputmode="decimal" max="5" min="0.01" step="0.01" type="number" value="0.20"/></div></div></div>
+<div class="savings-results"><div><span>Energy avoided</span><strong id="savingsKwh">447.6 kWh</strong></div><div class="savings-highlight"><span>Estimated savings</span><strong id="savingsMoney">$89.52</strong></div><div><span>New estimated cost</span><strong id="savingsNewCost">$805.68</strong></div></div>
+<div class="scenario-callout" id="scenarioCallout">Planning estimate only. The calculator does not control equipment.</div>
+</div>
+</div>
+
+</section>
+</main>
+</div>
 <script>
-let energyToken = '';
-async function faultApi(route, method='GET', body) {
-  const r=await fetch('http://localhost:5000/api/'+route,{method,headers:{Authorization:'Bearer '+energyToken,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
-  const d=await r.json();if(!r.ok)throw new Error(d.message || 'Request failed.');return d;
-}
-async function loadFaults() {
-  const rows=await faultApi('energy/faults');const tbody=document.getElementById('faultRows');tbody.replaceChildren();
-  for(const fault of rows){
-    const tr=document.createElement('tr'),name=document.createElement('td'),cell=document.createElement('td');name.textContent='Room '+fault.room_number+' — '+fault.equipment_name;
-    const select=document.createElement('select');
-    for(const status of ['reported','in_progress','resolved','closed']){const option=document.createElement('option');option.value=status;option.textContent=status.replace('_',' ');select.appendChild(option);}
-    select.value=fault.fault_status;
-    select.onchange=async()=>{select.disabled=true;try{await faultApi('energy/faults/'+fault.id,'PATCH',{status:select.value});await loadFaults();}catch(e){document.getElementById('faultError').textContent=e.message;select.value=fault.fault_status;}finally{select.disabled=false;}};
-    cell.appendChild(select);tr.append(name,cell);tbody.appendChild(tr);
-  }
-  if(!rows.length){const tr=tbody.insertRow();const td=tr.insertCell();td.colSpan=2;td.textContent='No faults reported.';}
-  document.querySelectorAll('.stats-cards .card')[1].querySelector('h3').textContent=rows.filter(r=>['reported','in_progress'].includes(r.fault_status)).length+' Issues';
-}
-async function reportFault(){
-  try{
-    const number=prompt('Room number:');if(!number)return;
-    const rooms=await faultApi('rooms');const room=rooms.find(r=>String(r.room_number)===number.trim());if(!room)throw new Error('Room not found.');
-    const equipmentName=prompt('Equipment name:');if(!equipmentName)return;
-    const faultDescription=prompt('Describe the fault:');if(faultDescription===null)return;
-    await faultApi('energy/faults','POST',{roomId:room.id,equipmentName,faultDescription});await loadFaults();
-  }catch(e){document.getElementById('faultError').textContent=e.message;}
-}
-
-// Authenticated data replaces prototype readings without persisting the token.
-for (const panel of document.querySelectorAll('.floor-plan')) panel.replaceChildren();
-window.addEventListener('message', async event => {
-  if (event.source !== window.parent || event.origin !== window.location.origin || event.data?.type !== 'gdr-energy-session') return;
-  try {
-    energyToken=event.data.token;
-    await loadFaults();
-    const response = await fetch('http://localhost:5000/api/energy/overview',{headers:{Authorization:'Bearer '+event.data.token}});
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Energy records could not be loaded.');
-    for (const panel of document.querySelectorAll('.floor-plan')) panel.replaceChildren();
-    const uniqueRooms = [...new Map(data.rooms.map(r => [r.room_id,r])).values()];
-    for (const room of uniqueRooms) {
-      const floor = Number(room.floor_number) || 1;
-      let panel = document.getElementById('floor'+floor);
-      if (!panel) {
-        panel=document.createElement('div');panel.className='floor-plan';panel.id='floor'+floor;panel.style.display='none';
-        document.getElementById('floor1').parentElement.appendChild(panel);
-        const button=document.createElement('button');button.id='floorBtn'+floor;button.className=document.getElementById('floorBtn1').className.replace('active-floor-btn','');button.textContent='Floor '+floor;button.onclick=()=>showFloor(floor);
-        document.getElementById('floorBtn1').parentElement.appendChild(button);
-      }
-      let row=panel.querySelector('.floor-row');if(!row){row=document.createElement('div');row.className='floor-row';panel.appendChild(row);}
-      const level=room.energy_usage_level;
-      const card=document.createElement('div');card.className='room-block '+(['high','critical'].includes(level)?'room-high':level==='medium'?'room-medium':'room-low');
-      card.dataset.room='Room '+room.room_number;card.dataset.floor=floor;
-      const name=document.createElement('span');name.textContent=card.dataset.room;
-      const value=document.createElement('small');value.textContent=room.latest_kwh_usage == null ? 'No reading' : room.latest_kwh_usage+' kWh';card.append(name,value);
-      card.onmouseover=()=>showRoomDetails(name.textContent,'Not provided',value.textContent,level || 'No reading','Not provided','Latest recorded room usage','0%');
-      row.appendChild(card);
-    }
-    const total=document.querySelector('.stats-cards h3');if(total)total.textContent=Number(data.summary.total_kwh || 0).toLocaleString()+' kWh';
-    const cards=document.querySelectorAll('.stats-cards .card');
-    cards[1].querySelector('h3').textContent=Number(data.summary.open_faults || 0)+' Issues';
-    cards[2].querySelector('h3').textContent=Number(data.summary.total_sensors) ? Math.round(100*Number(data.summary.active_sensors)/Number(data.summary.total_sensors))+'%' : 'No sensors';
-    const measured=uniqueRooms.filter(r=>r.latest_kwh_usage != null).sort((a,b)=>Number(b.latest_kwh_usage)-Number(a.latest_kwh_usage));
-    cards[3].querySelector('h3').textContent=measured.length ? 'Room '+measured[0].room_number : 'No readings';
-    cards[3].querySelector('.card-subtext').textContent=measured.length ? measured[0].latest_kwh_usage+' kWh — latest reading' : 'No energy readings recorded';
-    document.querySelector('.energy-alert').textContent=measured.length ? 'Highest recorded room usage: Room '+measured[0].room_number+' — '+measured[0].latest_kwh_usage+' kWh.' : 'No energy readings recorded yet.';
-
-  } catch(error) {
-    const hint=document.getElementById('searchHint');hint.textContent=error.message;hint.style.display='block';
-  }
-});
-
- 
-function showRoomDetails(
-room,
-sensor,
-energy,
-status,
-sensorStatus,
-note,
-width
-){
-    document.getElementById("panelRoom").innerText = room;
-    document.getElementById("panelSensor").innerText = sensor;
-    document.getElementById("panelEnergy").innerText = energy;
-    document.getElementById("panelStatus").innerText = status;
-    document.getElementById("panelSensorStatus").innerText = sensorStatus;
-    document.getElementById("panelNote").innerText = note;
- 
-    const bar = document.getElementById("panelBar");
- 
-    bar.style.width = width;
- 
-    if(status === "High Usage"){
-        bar.style.background =
-        "linear-gradient(135deg,#ef4444,#fb7185)";
-    }
-    else if(status === "Medium Usage"){
-        bar.style.background =
-        "linear-gradient(135deg,#f59e0b,#fbbf24)";
-    }
-    else{
-        bar.style.background =
-        "linear-gradient(135deg,#22c55e,#86efac)";
-    }
-}
- 
+'use strict';
+/*
+ HOTEL ENERGY DASHBOARD — SELF-CONTAINED FRONTEND
+ This JavaScript is embedded inside index.html; main.css is the only other file.
+ INITIAL VALUES: illustrative; external readings can be supplied via window.HotelEnergyDashboard.updateFromSource(payload).
+ Payload example:
+ { period:'today', total:656, previous:704, floors:[72,295,289],
+   history:[60,75,85,110,125,108,93], peak:'2 PM',
+   rooms:{'Room 205':{kwh:56,status:'high',sensorStatus:'online'}} }
+ Period totals must equal the sum of floor totals. Never embed API secrets in this HTML.
+ A real installation requires a secured data service and validated meter readings.
+*/
+const periodData = {
+ today: {total:656,previous:704,floor:[72,295,289],history:[60,75,85,110,125,108,93],labels:['6am','8am','10am','12pm','2pm','4pm','6pm'],peak:'2 PM',days:1},
+ '7days': {total:4476,previous:4620,floor:[515,2010,1951],history:[620,632,655,610,678,650,631],labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],peak:'Friday',days:7},
+ '30days': {total:19380,previous:19900,floor:[2220,8630,8530],history:[2530,2700,2680,2920,2770,2710,3070],labels:['1–4','5–8','9–12','13–16','17–20','21–25','26–30'],peak:'Days 26–30',days:30}
+};
+let selectedPeriod='7days';
+let selectedRoom=null;
+const money = n => new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(n);
+const count = n => new Intl.NumberFormat('en-AU',{maximumFractionDigits:1}).format(n);
+const get = id => document.getElementById(id);
+const set = (id,value) => {if(get(id)) get(id).textContent=value;};
+const periodLabel = p => p==='today'?'Today':p==='30days'?'30 Days':'7 Days';
+function tariff(){const n=Number(get('tariffInput').value); return Number.isFinite(n)&&n>0?Math.min(n,5):0.20;}
+function reduction(){return Number(get('reductionRange').value)||0;}
+function roomBlocks(){return Array.from(document.querySelectorAll('.room-block'));}
+function roomKwh(room){return Number(room.dataset.kwh||0);}
+function roomStatus(room){return (room.dataset.usageStatus||'normal').toLowerCase();}
+function sensorWarning(room){return (room.dataset.sensorStatus||'').toLowerCase()==='warning';}
+function topRooms(){return roomBlocks().sort((a,b)=>roomKwh(b)-roomKwh(a));}
 function showFloor(num){
-  document.querySelectorAll('.floor-plan').forEach(panel => panel.style.display=panel.id==='floor'+num?'block':'none');
-  document.querySelectorAll('[id^="floorBtn"]').forEach(button=>button.classList.toggle('active-floor-btn',button.id==='floorBtn'+num));
+ [1,2,3].forEach(i=>{const f=get('floor'+i), b=get('floorBtn'+i);if(f) f.style.display=i===num?'flex':'none';if(b){b.classList.toggle('active-floor-btn',i===num);b.setAttribute('aria-pressed',String(i===num));}});
 }
-
-// Room search: auto-switch floor + highlight matching room
-document.getElementById("roomSearch").addEventListener("input", function(){
-    const query = this.value.toLowerCase().trim();
-    const rooms = document.querySelectorAll(".room-block");
-    const hint = document.getElementById("searchHint");
- 
-    // Remove all existing search highlights
-    rooms.forEach(room => {
-        room.classList.remove("search-highlight");
-        room.style.outline = "";
-        room.style.outlineOffset = "";
-    });
- 
-    if(!query){
-        hint.textContent = "";
-        hint.style.display = "none";
-        return;
-    }
- 
-    let matchedRoom = null;
- 
-    rooms.forEach(room => {
-        const label = room.querySelector("span");
-        if(!label) return;
-        if(label.textContent.toLowerCase().includes(query)){
-            if(!matchedRoom) matchedRoom = room;
-        }
-    });
- 
-    if(matchedRoom){
-        const floor = parseInt(matchedRoom.getAttribute("data-floor"));
-        const roomName = matchedRoom.getAttribute("data-room");
- 
-        // Switch to the correct floor
-        showFloor(floor);
- 
-        // Apply highlight
-        matchedRoom.classList.add("search-highlight");
- 
-        // Show hint
-        hint.textContent = "Showing: " + roomName + " on Floor " + floor;
-        hint.style.display = "block";
-        hint.style.color = "#2563eb";
- 
-        // Scroll into view smoothly
-        matchedRoom.scrollIntoView({ behavior: "smooth", block: "center" });
-    } else {
-        hint.textContent = "No room found.";
-        hint.style.display = "block";
-        hint.style.color = "#dc2626";
-    }
+window.showFloor=showFloor;
+function showRoomDetails(room){
+ if(!room) return;
+ selectedRoom=room;
+ roomBlocks().forEach(x=>x.classList.toggle('dashboard-selected-room',x===room));
+ set('panelRoom',room.dataset.room);
+ set('panelSensor',room.dataset.sensor||'Not mapped');
+ set('panelEnergy',count(roomKwh(room))+' kWh');
+ const status=roomStatus(room);
+ set('panelStatus',status==='high'?'High Usage':status==='medium'?'Medium Usage':'Normal Usage');
+ set('panelSensorStatus',room.dataset.sensorStatus||'—');
+ set('panelNote',room.dataset.note||'Room energy reading.');
+ const bar=get('panelBar');
+ if(bar){bar.style.width=Math.max(5,Math.min(100,roomKwh(room)/60*100))+'%';bar.style.background=status==='high'?'linear-gradient(135deg,#ef4444,#fb7185)':status==='medium'?'linear-gradient(135deg,#f59e0b,#fbbf24)':'linear-gradient(135deg,#22c55e,#86efac)';}
+}
+function openRoomFromDashboard(roomName,floor){
+ const room=roomBlocks().find(r=>r.dataset.room===roomName);
+ if(!room) return;
+ showFloor(Number(room.dataset.floor)||floor||1);
+ showRoomDetails(room);
+ room.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function applyRoomStatusFilter(){
+ const selected=get('statusFilter').value;let hits=0;
+ roomBlocks().forEach(room=>{
+  const match=selected==='all'||(selected==='warning'?sensorWarning(room):roomStatus(room)===selected);
+  room.classList.toggle('room-filtered-out',!match);
+  room.tabIndex=match?0:-1;
+  if(match)hits++;
+ });
+ const label=selected==='all'?'All rooms':get('statusFilter').selectedOptions[0].textContent;
+ set('filterResult',hits+' matching rooms · '+label);
+}
+function clearRoomSearch(){
+ get('roomSearch').value='';roomBlocks().forEach(r=>r.classList.remove('search-highlight'));
+ get('searchHint').textContent='';get('searchHint').style.display='none';get('clearSearch').style.display='none';applyRoomStatusFilter();
+}
+function searchRooms(){
+ const q=get('roomSearch').value.trim().toLowerCase();roomBlocks().forEach(r=>r.classList.remove('search-highlight'));
+ get('clearSearch').style.display=q?'flex':'none';
+ const hint=get('searchHint');if(!q){hint.style.display='none';return;}
+ const match=roomBlocks().find(r=>r.dataset.room.toLowerCase().includes(q));
+ hint.style.display='block';
+ if(!match){hint.textContent='No matching room.';return;}
+ const filter=get('statusFilter').value;
+ if(filter!=='all'&&!(filter==='warning'?sensorWarning(match):roomStatus(match)===filter)){
+  hint.textContent=match.dataset.room+' found; change the room-status filter to view it.';return;
+ }
+ showFloor(Number(match.dataset.floor));match.classList.add('search-highlight');showRoomDetails(match);
+ hint.textContent='Showing '+match.dataset.room+' · Floor '+match.dataset.floor;
+}
+function renderRankings(){
+ const highest=topRooms();
+ document.querySelectorAll('.ranking-row').forEach((row,i)=>{
+  const room=highest[i];if(!room)return;
+  const name=row.querySelector('.ranking-info strong'),floor=row.querySelector('.ranking-info small');
+  if(name)name.textContent=room.dataset.room;
+  if(floor)floor.textContent='Floor '+room.dataset.floor;
+  const value=row.querySelector('.ranking-value');if(value)value.textContent=count(roomKwh(room))+' kWh';
+  const bar=row.querySelector('.ranking-bar span');if(bar)bar.style.width=100*roomKwh(room)/Math.max(1,roomKwh(highest[0]))+'%';
+  row.dataset.room=room.dataset.room;
+ });
+ document.querySelectorAll('.rank-list li').forEach((li,i)=>{
+  if(!highest[i])return;
+  const num=li.querySelector('.rank-num'),value=li.querySelector('.rank-value');
+  li.childNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE)n.textContent='';});
+  if(num)num.insertAdjacentText('afterend',highest[i].dataset.room);
+  if(value)value.textContent=count(roomKwh(highest[i]))+' kWh';
+ });
+ const best=highest[0];
+ if(best){set('statTopRoom',best.dataset.room.replace('Room ',''));set('statTopRoomUsage',count(roomKwh(best))+' kWh today');}
+ const watch=document.querySelector('.energy-alert');if(watch&&best)watch.textContent='Energy watch: '+best.dataset.room+' has the highest room reading today ('+count(roomKwh(best))+' kWh). Select it to view details.';
+}
+function renderRoomProfile(){
+ const all=roomBlocks();const n=all.length||1;
+ const statuses=['normal','medium','high'].map(s=>all.filter(r=>roomStatus(r)===s).length);
+ const perc=statuses.map(x=>Math.round(100*x/n));
+ const profile=document.querySelector('.efficiency-card'); if(!profile)return;
+ const h=profile.querySelector('.enhancement-header h3');if(h)h.textContent='Room Usage Profile';
+ const score=profile.querySelector('.efficiency-score');if(score)score.textContent=n+' rooms';
+ const fill=profile.querySelector('.score-fill');if(fill)fill.style.width=perc[0]+'%';
+ profile.querySelectorAll('.efficiency-item strong').forEach((e,i)=>e.textContent=perc[i]+'%');
+ const tip=profile.querySelector('.efficiency-tip span');const top=topRooms()[0];if(tip&&top)tip.textContent='Review '+top.dataset.room+' first; it has the highest room reading.';
+}
+function renderHistory(data){
+ const svg=document.querySelector('.energy-history-card svg');
+ if(!svg)return;
+ const values=data.history;const maxValue=Math.max(...values,1);const ceiling=Math.ceil(maxValue*1.15/50)*50;
+ const pts=values.map((v,i)=>[10+i*680/(values.length-1),205-v/ceiling*185]);
+ const pointText=pts.map(([x,y])=>x.toFixed(1)+','+y.toFixed(1)).join(' ');
+ const line=svg.querySelector('.history-line'),area=svg.querySelector('.history-area');
+ if(line)line.setAttribute('points',pointText);
+ if(area)area.setAttribute('points',pointText+' 690,205 10,205');
+ svg.querySelectorAll('.chart-point').forEach((c,i)=>{if(!pts[i])return;c.setAttribute('cx',pts[i][0]);c.setAttribute('cy',pts[i][1]);c.setAttribute('aria-label',data.labels[i]+': '+count(values[i])+' kWh');});
+ svg.setAttribute('aria-label','Energy trend for '+periodLabel(selectedPeriod));
+ const labels=document.querySelectorAll('.chart-x-labels span');labels.forEach((s,i)=>{if(data.labels[i])s.textContent=data.labels[i];});
+ const axis=document.querySelectorAll('.chart-y-labels span');axis.forEach((s,i)=>s.textContent=count(ceiling*(4-i)/4));
+ const card=document.querySelector('.energy-history-card');
+ if(card){const badge=card.querySelector('.period-badge');if(badge)badge.textContent=periodLabel(selectedPeriod);const summary=card.querySelectorAll('.history-summary strong');if(summary[0])summary[0].textContent=count(data.total/data.days)+' kWh';if(summary[1])summary[1].textContent=data.peak;if(summary[2])summary[2].textContent=trendString(data);}
+}
+function percentage(data){return data.previous?100*Math.abs(data.previous-data.total)/data.previous:0;}
+function trendString(data){return (data.total<=data.previous?'↓ ':'↑ ')+percentage(data).toFixed(1)+'%';}
+function renderSavings(){
+ const data=periodData[selectedPeriod], rate=tariff(),pct=reduction(),saved=data.total*pct/100;
+ set('reductionLabel',pct+'%');
+ set('savingsKwh',count(saved)+' kWh');
+ set('savingsMoney',money(saved*rate));
+ set('savingsNewCost',money((data.total-saved)*rate));
+ set('summarySavings',money(saved*rate));
+ set('statCost',money(data.total*rate));set('summaryCost','≈ '+money(data.total*rate)+' estimated cost');
+ set('comparisonCost','Estimated cost: '+money(data.total*rate));set('opsCost',money(data.total*rate));
+}
+function renderPeriod(period){
+ selectedPeriod=periodData[period]?period:'7days';const data=periodData[selectedPeriod];
+ const current=data.total,previous=data.previous,delta=Math.abs(previous-current),improvement=current<=previous;
+ const p=percentage(data),changeText=trendString(data),leading=data.floor.indexOf(Math.max(...data.floor))+1;
+ const leadShare=(data.floor[leading-1]/current*100).toFixed(1);
+ set('statTotal',count(current));set('statTopFloor','Floor '+leading);
+ set('overviewPeriod',periodLabel(selectedPeriod));
+ set('overviewTrend',changeText);set('overviewPeak','Peak: '+data.peak);
+ const mainTrend=get('overviewTrend');if(mainTrend){mainTrend.classList.toggle('overview-trend-increase',!improvement);}
+ const smallLine=document.querySelector('.overview-sparkline polyline');
+ if(smallLine){const levels=data.history,hi=Math.max(...levels,1),lo=Math.min(...levels),span=Math.max(1,hi-lo);const xy=levels.map((v,i)=>(i*140/(levels.length-1)).toFixed(1)+','+(29-(v-lo)/span*22).toFixed(1)).join(' ');smallLine.setAttribute('points',xy);} 
+ set('summaryTotal',count(current));set('summaryPeriod','Total for '+periodLabel(selectedPeriod));
+ set('summaryTrend',changeText+' vs previous period');
+ set('comparisonPeriodBadge',periodLabel(selectedPeriod));set('comparisonCurrent',count(current)+' kWh');set('comparisonPrevious',count(previous)+' kWh');set('comparisonArrow',improvement?'↓':'↑');
+ const comparison=get('comparisonChange');if(comparison){comparison.querySelector('strong').textContent=p.toFixed(1)+'% '+(improvement?'lower':'higher');comparison.querySelector('span').textContent=count(delta)+' kWh difference';comparison.classList.toggle('comparison-negative',!improvement);}
+ set('opsPeriodBadge',periodLabel(selectedPeriod));set('opsCurrentUsage',count(current));set('opsChange',changeText+' compared with the previous period');set('opsPeak',data.peak);
+ data.floor.forEach((amount,index)=>{
+  const n=index+1,share=current?100*amount/current:0;
+  const fbar=get('floor'+n+'Compare'),fval=get('floor'+n+'CompareValue');
+  if(fbar)fbar.style.width=(100*amount/Math.max(...data.floor)).toFixed(1)+'%';if(fval)fval.textContent=count(amount)+' kWh';
+  const chart=get('floorChart'+n),v=get('floorChart'+n+'Value'),shr=get('floorChart'+n+'Share');
+  if(chart)chart.style.width=share.toFixed(1)+'%';if(v)v.textContent=count(amount)+' kWh';if(shr)shr.textContent=share.toFixed(1)+'%';
+ });
+ set('performancePercent',p.toFixed(1)+'%');set('performanceDirection',improvement?'less usage':'more usage');
+ set('performanceDelta',count(delta)+' kWh '+(improvement?'avoided':'increase'));set('performancePrevious',count(previous)+' kWh');set('performanceAverage',count(current/data.days)+' kWh');
+ set('performanceFloor','Floor '+leading+' · '+leadShare+'%');
+ set('performanceMessage',improvement?'The selected period used less energy than the previous comparable period.':'Usage increased over the previous comparable period — investigate demand peaks.');
+ const ring=get('performanceRing');if(ring)ring.style.background='conic-gradient('+(improvement?'var(--secondary)':'#f97316')+' 0 '+Math.min(100,p*5)+'%,#e2e8f0 '+Math.min(100,p*5)+'% 100%)';
+ const top=topRooms()[0];set('opsInsight','Floor '+leading+' accounts for '+leadShare+'% of period energy. '+(top?top.dataset.room+' has the highest today-only room reading ('+count(roomKwh(top))+' kWh).':'Review high-usage rooms to find avoidable demand.'));
+ const button=get('inspectPriorityRoom');if(button&&top){button.textContent='Inspect '+top.dataset.room+' →';button.dataset.room=top.dataset.room;}
+ // The service split is a modelled scenario, not a measured breakdown.
+ const split=[0.43,0.26,0.20,0.11];let allocated=0;
+ split.forEach((part,i)=>{const amount=i===3?current-allocated:Math.round(current*part);allocated+=amount;set('mix'+i,count(amount)+' kWh');});
+ renderHistory(data);renderSavings();
+ const source=data.source==='external'?'External input':'Building overview';
+ set('sourceStatus',source);set('performanceSource',data.source==='external'?'External input':'Illustrative');
+}
+// Accept independently supplied data for one period. Other periods retain their initial values until separately updated.
+window.HotelEnergyDashboard={
+ updateFromSource(payload){
+  if(!payload||!periodData[payload.period])throw new Error('Use period: today, 7days or 30days');
+  const total=Number(payload.total),previous=Number(payload.previous),floors=payload.floors;
+  if(!Number.isFinite(total)||total<0||!Number.isFinite(previous)||previous<0||!Array.isArray(floors)||floors.length!==3||floors.some(v=>!Number.isFinite(Number(v))||Number(v)<0)||Math.abs(floors.reduce((s,n)=>s+Number(n),0)-total)>0.5)throw new Error('Invalid usage values: total must equal three floor totals');
+  const entry=periodData[payload.period];entry.total=total;entry.previous=previous;entry.floor=floors.map(Number);
+  if(Array.isArray(payload.history)&&payload.history.length===7&&payload.history.every(v=>Number.isFinite(Number(v))&&Number(v)>=0))entry.history=payload.history.map(Number);
+  if(typeof payload.peak==='string'&&payload.peak.trim())entry.peak=payload.peak.slice(0,50);
+  entry.source='external';entry.updatedAt=new Date();
+  if(payload.period==='today'&&payload.rooms&&typeof payload.rooms==='object'){
+   roomBlocks().forEach(r=>{const reading=payload.rooms[r.dataset.room];if(!reading)return;
+    if(Number.isFinite(Number(reading.kwh))&&Number(reading.kwh)>=0){r.dataset.kwh=String(Number(reading.kwh));const sm=r.querySelector('small');if(sm)sm.textContent=count(roomKwh(r))+' kWh';}
+    if(['normal','medium','high'].includes(reading.status)){r.dataset.usageStatus=reading.status;r.classList.remove('room-low','room-medium','room-high');r.classList.add(reading.status==='normal'?'room-low':reading.status==='medium'?'room-medium':'room-high');}
+    if(['Online','Warning','Offline'].includes(reading.sensorStatus))r.dataset.sensorStatus=reading.sensorStatus;
+   });
+   renderRankings();renderRoomProfile();applyRoomStatusFilter();if(selectedRoom)showRoomDetails(selectedRoom);
+  }
+  get('periodFilter').value=payload.period;renderPeriod(payload.period);
+ }
+};
+// Room interaction + keyboard accessibility
+roomBlocks().forEach(room=>{
+ room.setAttribute('role','button');room.tabIndex=0;room.setAttribute('aria-label',room.dataset.room+' energy detail');
+ room.addEventListener('mouseover',()=>showRoomDetails(room));
+ room.addEventListener('focus',()=>showRoomDetails(room));
+ room.addEventListener('click',()=>showRoomDetails(room));
+ room.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showRoomDetails(room);}});
 });
- 
+document.querySelectorAll('.ranking-row').forEach(row=>{
+ row.setAttribute('role','button');row.tabIndex=0;
+ row.addEventListener('click',()=>openRoomFromDashboard(row.dataset.room));
+ row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();row.click();}});
+});
+document.querySelectorAll('.alert-row').forEach(row=>{
+ const label=row.querySelector('strong'),match=label&&label.textContent.match(/Room \d+/);
+ if(!match)return;row.setAttribute('role','button');row.tabIndex=0;
+ row.addEventListener('click',()=>openRoomFromDashboard(match[0]));
+ row.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();row.click();}});
+});
+get('roomSearch').addEventListener('input',searchRooms);
+get('clearSearch').addEventListener('click',clearRoomSearch);
+get('statusFilter').addEventListener('change',()=>{applyRoomStatusFilter();if(get('roomSearch').value)searchRooms();});
+get('periodFilter').addEventListener('change',e=>renderPeriod(e.target.value));
+get('resetFilters').addEventListener('click',()=>{get('periodFilter').value='7days';get('statusFilter').value='all';clearRoomSearch();renderPeriod('7days');});
+get('reductionRange').addEventListener('input',renderSavings);
+get('tariffInput').addEventListener('input',renderSavings);
+get('inspectPriorityRoom').addEventListener('click',e=>openRoomFromDashboard(e.currentTarget.dataset.room));
+renderRankings();renderRoomProfile();showFloor(1);applyRoomStatusFilter();renderPeriod('7days');
+
 </script>
- 
 </body>
 </html>
