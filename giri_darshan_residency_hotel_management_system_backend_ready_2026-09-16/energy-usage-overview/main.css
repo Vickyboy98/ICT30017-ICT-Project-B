@@ -1949,3 +1949,1146 @@ a, button, input{
 }
 
 .filter-reset:hover{
+    background:#eff6ff;
+    color:var(--primary);
+    border-color:#bfdbfe;
+}
+
+.room-block{
+    transition:opacity .2s ease, filter .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+
+.dashboard-selected-room{
+    transform:translateY(-3px) scale(1.02);
+    box-shadow:0 0 0 4px rgba(37,99,235,.18), 0 10px 24px rgba(37,99,235,.18);
+}
+
+.ranking-row,
+.alert-row{
+    cursor:pointer;
+}
+
+.ranking-row:focus-visible,
+.alert-row:focus-visible{
+    outline:3px solid var(--primary);
+    outline-offset:3px;
+}
+
+@media(max-width:650px){
+    .filter-heading{flex-direction:column;}
+    .filter-controls{align-items:stretch;}
+    .filter-group,.filter-reset{width:100%;}
+}
+
+/* ====================================
+   WEEK 8 ENERGY ANALYSIS
+==================================== */
+.week8-analysis{
+    margin-bottom:22px;
+}
+
+.comparison-card{
+    width:100%;
+}
+
+.comparison-main{
+    display:grid;
+    grid-template-columns:1fr 52px 1fr;
+    gap:14px;
+    align-items:center;
+}
+
+.comparison-total{
+    padding:16px;
+    border:1px solid #dbeafe;
+    border-radius:12px;
+    background:#f8fbff;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.comparison-total span{
+    color:var(--muted);
+    font-size:11px;
+}
+
+.comparison-total strong{
+    font-size:22px;
+}
+
+.comparison-total.previous{
+    background:#f8fafc;
+    border-color:#e2e8f0;
+}
+
+.comparison-arrow{
+    width:42px;
+    height:42px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:#dcfce7;
+    color:#15803d;
+    font-size:21px;
+    font-weight:800;
+}
+
+.comparison-change{
+    grid-column:1 / -1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:11px 14px;
+    border-radius:10px;
+    background:#f0fdf4;
+    border:1px solid #bbf7d0;
+}
+
+.comparison-change strong{
+    color:#15803d;
+    font-size:13px;
+}
+
+.comparison-change span{
+    color:#64748b;
+    font-size:11px;
+}
+
+.comparison-change.comparison-negative{
+    background:#fff7ed;
+    border-color:#fed7aa;
+}
+
+.comparison-change.comparison-negative strong{
+    color:#c2410c;
+}
+
+.floor-comparison{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+}
+
+.floor-comparison-heading{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:12px;
+}
+
+.floor-comparison-heading strong{
+    font-size:12px;
+}
+
+.floor-comparison-heading span{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.floor-compare-row{
+    display:grid;
+    grid-template-columns:60px 1fr 58px;
+    gap:10px;
+    align-items:center;
+    margin-top:9px;
+}
+
+.floor-compare-row > span{
+    color:#64748b;
+    font-size:10px;
+}
+
+.floor-compare-row > strong{
+    font-size:10px;
+    text-align:right;
+}
+
+.floor-compare-track{
+    height:8px;
+    background:#e2e8f0;
+    border-radius:999px;
+    overflow:hidden;
+}
+
+.floor-compare-track span{
+    display:block;
+    height:100%;
+    border-radius:999px;
+    background:var(--primary);
+    transition:width .4s ease;
+}
+
+.monitor-updated{
+    animation:monitorRefresh .45s ease;
+}
+
+@keyframes monitorRefresh{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.01);}
+    100%{transform:scale(1);}
+}
+
+@media(max-width:650px){
+    .comparison-main{
+        grid-template-columns:1fr;
+    }
+
+    .comparison-arrow{
+        transform:rotate(90deg);
+        margin:auto;
+    }
+
+    .comparison-change{
+        gap:8px;
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .floor-comparison-heading{
+        flex-direction:column;
+    }
+
+    .floor-compare-row{
+        grid-template-columns:54px 1fr 55px;
+    }
+}
+
+
+
+/* ====================================
+   WEEK 9 ACCESSIBILITY + FINAL POLISH
+==================================== */
+.room-block:focus-visible{
+    outline:3px solid var(--primary);
+    outline-offset:4px;
+    z-index:20;
+}
+
+.floor-btn{
+    transition:background .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+
+.floor-btn:active,
+.filter-reset:active,
+.search-clear:active{
+    transform:scale(.97);
+}
+
+@media(max-width:650px){
+    .search-box{
+        width:100%;
+    }
+
+    .search-box input{
+        height:46px;
+    }
+}
+
+
+/* ====================================
+   WEEK 9 — ENERGY OPERATIONS REDESIGN
+==================================== */
+.energy-operations{
+    margin-top:22px;
+    background:rgba(255,255,255,0.82);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:28px;
+    box-shadow:var(--shadow-md);
+    overflow:hidden;
+}
+
+.operations-header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    margin-bottom:22px;
+}
+
+.section-kicker,
+.card-eyebrow{
+    display:block;
+    color:var(--primary);
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    margin-bottom:6px;
+}
+
+.operations-header h2{
+    font-size:22px;
+    margin-bottom:5px;
+}
+
+.operations-header p{
+    color:var(--muted);
+    font-size:12px;
+}
+
+.operations-status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 12px;
+    border:1px solid #dbeafe;
+    background:#f8fbff;
+    border-radius:999px;
+    color:#475569;
+    font-size:11px;
+    white-space:nowrap;
+}
+
+.operations-status strong{
+    padding-left:8px;
+    margin-left:2px;
+    border-left:1px solid #dbeafe;
+    color:var(--text);
+    font-family:var(--font-mono);
+}
+
+.status-pulse{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#22c55e;
+    box-shadow:0 0 0 4px #dcfce7;
+}
+
+.operations-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.55fr) minmax(340px,.85fr);
+    gap:18px;
+}
+
+.energy-load-panel,
+.system-health-panel,
+.operations-mini-card{
+    background:#fff;
+    border:1px solid #dbeafe;
+    border-radius:18px;
+    box-shadow:0 8px 24px rgba(37,99,235,.07);
+}
+
+.energy-load-panel,
+.system-health-panel{
+    padding:22px;
+}
+
+.operations-card-heading,
+.mini-heading{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:15px;
+}
+
+.operations-card-heading h3,
+.mini-heading h3{
+    font-size:16px;
+    margin:0;
+}
+
+.load-chip,
+.health-online,
+.issue-count,
+.network-count{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:800;
+    white-space:nowrap;
+}
+
+.load-chip{
+    color:var(--primary);
+    background:#eff6ff;
+}
+
+.health-online{
+    color:#15803d;
+    background:#dcfce7;
+}
+
+.health-online span{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#22c55e;
+}
+
+.issue-count{
+    color:#b91c1c;
+    background:#fee2e2;
+}
+
+.network-count{
+    color:#0369a1;
+    background:#e0f2fe;
+}
+
+.load-summary{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 260px;
+    gap:22px;
+    align-items:center;
+    padding:22px 0;
+    margin-top:2px;
+    border-bottom:1px solid #eef2f7;
+}
+
+.load-total{
+    display:grid;
+    grid-template-columns:auto auto;
+    align-items:end;
+    column-gap:8px;
+}
+
+.load-total strong{
+    font-family:var(--font-mono);
+    font-size:48px;
+    line-height:.95;
+    letter-spacing:-2px;
+    color:var(--text);
+}
+
+.load-total > span{
+    color:var(--muted);
+    font-size:15px;
+    font-weight:700;
+    padding-bottom:5px;
+}
+
+.load-total small{
+    grid-column:1 / -1;
+    margin-top:9px;
+    color:#15803d;
+    font-size:11px;
+    font-weight:700;
+}
+
+.load-meta{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.load-meta div{
+    padding:12px;
+    border-radius:12px;
+    background:#f8fbff;
+    border:1px solid #e2e8f0;
+}
+
+.load-meta span,
+.health-metric span{
+    display:block;
+    color:var(--muted);
+    font-size:10px;
+    margin-bottom:5px;
+}
+
+.load-meta strong{
+    font-family:var(--font-mono);
+    font-size:13px;
+}
+
+.energy-distribution{
+    padding-top:20px;
+}
+
+.distribution-heading{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    margin-bottom:15px;
+}
+
+.distribution-heading strong{
+    font-size:12px;
+}
+
+.distribution-heading span{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.operations-floor-row{
+    display:grid;
+    grid-template-columns:105px minmax(100px,1fr) 70px;
+    align-items:center;
+    gap:12px;
+    margin:13px 0;
+}
+
+.operations-floor-name strong{
+    display:block;
+    font-size:12px;
+}
+
+.operations-floor-name span{
+    color:var(--muted);
+    font-family:var(--font-mono);
+    font-size:9px;
+}
+
+.operations-floor-track{
+    height:11px;
+    border-radius:999px;
+    background:#eef2f7;
+    overflow:hidden;
+}
+
+.operations-floor-track .floor-chart-fill{
+    min-width:8%;
+    height:100%;
+    border-radius:999px;
+    transition:width .45s ease;
+}
+
+.operations-floor-value{
+    text-align:right;
+    font-family:var(--font-mono);
+    font-size:11px;
+}
+
+.energy-insight{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+    margin-top:20px;
+    padding:13px 15px;
+    border:1px solid #bfdbfe;
+    border-radius:13px;
+    background:linear-gradient(135deg,#eff6ff,#f8fbff);
+}
+
+.insight-icon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:25px;
+    height:25px;
+    flex:0 0 25px;
+    border-radius:8px;
+    background:#dbeafe;
+    color:var(--primary);
+    font-weight:800;
+}
+
+.energy-insight strong{
+    font-size:11px;
+}
+
+.energy-insight p{
+    margin-top:3px;
+    color:#64748b;
+    font-size:10px;
+    line-height:1.5;
+}
+
+.health-overview{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:22px 0 18px;
+}
+
+.health-ring{
+    width:108px;
+    height:108px;
+    flex:0 0 108px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:conic-gradient(var(--primary) 0 96%, #e2e8f0 96% 100%);
+    transform:rotate(-90deg);
+}
+
+.health-ring-inner{
+    width:82px;
+    height:82px;
+    border-radius:50%;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform:rotate(90deg);
+}
+
+.health-ring-inner strong{
+    font-family:var(--font-mono);
+    font-size:25px;
+}
+
+.health-ring-inner span{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+    margin-top:7px;
+}
+
+.health-copy strong{
+    font-size:13px;
+}
+
+.health-copy p{
+    margin:5px 0 9px;
+    color:var(--muted);
+    font-size:10px;
+    line-height:1.5;
+}
+
+.health-grade{
+    display:inline-block;
+    padding:4px 8px;
+    border-radius:6px;
+    color:#15803d;
+    background:#dcfce7;
+    font-size:10px;
+    font-weight:800;
+}
+
+.health-metrics{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:9px;
+}
+
+.health-metric{
+    padding:11px 12px;
+    border:1px solid #e2e8f0;
+    border-radius:11px;
+}
+
+.health-metric strong{
+    font-family:var(--font-mono);
+    font-size:12px;
+}
+
+.energy-operations .activity-line{
+    margin-top:13px;
+    padding-top:13px;
+    border-top:1px solid #eef2f7;
+}
+
+.operations-bottom-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-top:18px;
+}
+
+.operations-mini-card{
+    padding:18px 20px;
+}
+
+.operations-status-list{
+    margin-top:13px;
+}
+
+.operations-status-row{
+    display:grid;
+    grid-template-columns:30px minmax(0,1fr) auto;
+    align-items:center;
+    gap:11px;
+    padding:10px 0;
+    border-top:1px solid #eef2f7;
+}
+
+.status-item-icon{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:28px;
+    height:28px;
+    border-radius:9px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.fault-icon{background:#fee2e2;color:#dc2626;}
+.repair-icon{background:#fef3c7;color:#d97706;}
+.pending-icon{background:#e0f2fe;color:#0369a1;}
+.online-icon{background:#dcfce7;color:#15803d;}
+.warning-icon{background:#fef3c7;color:#b45309;}
+
+.status-item-copy strong{
+    display:block;
+    font-size:11px;
+}
+
+.status-item-copy span{
+    display:block;
+    margin-top:2px;
+    color:var(--muted);
+    font-size:9px;
+}
+
+.operations-status-row .status-pill{
+    font-size:9px;
+    padding:5px 9px;
+}
+
+@media(max-width:1050px){
+    .operations-grid{
+        grid-template-columns:1fr;
+    }
+
+    .load-summary{
+        grid-template-columns:1fr 300px;
+    }
+}
+
+@media(max-width:700px){
+    .energy-operations{
+        padding:18px;
+    }
+
+    .operations-header{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .operations-status{
+        width:100%;
+        justify-content:center;
+    }
+
+    .load-summary{
+        grid-template-columns:1fr;
+    }
+
+    .load-total strong{
+        font-size:40px;
+    }
+
+    .operations-floor-row{
+        grid-template-columns:75px minmax(80px,1fr) 60px;
+        gap:8px;
+    }
+
+    .operations-bottom-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:480px){
+    .load-meta,
+    .health-metrics{
+        grid-template-columns:1fr;
+    }
+
+    .health-overview{
+        align-items:flex-start;
+    }
+
+    .health-ring{
+        width:90px;
+        height:90px;
+        flex-basis:90px;
+    }
+
+    .health-ring-inner{
+        width:68px;
+        height:68px;
+    }
+
+    .operations-floor-row{
+        grid-template-columns:1fr 55px;
+    }
+
+    .operations-floor-name{
+        grid-column:1 / -1;
+    }
+
+    .operations-floor-track{
+        grid-column:1;
+    }
+
+    .operations-floor-value{
+        grid-column:2;
+        grid-row:2;
+    }
+}
+
+/* =====================================================
+   WEEK 10 — ENERGY INTELLIGENCE + LAST SPRINT UI
+   Extends the existing blue / white dashboard design.
+   ===================================================== */
+.prototype-notice{
+    display:flex; flex-wrap:wrap; align-items:center; gap:9px 12px;
+    padding:12px 17px; margin:-10px 0 22px;
+    border-radius:13px; background:#eff6ff;
+    border:1px solid #bfdbfe; color:#1e40af;
+    font-size:12px; line-height:1.5;
+}
+.prototype-notice strong{font-size:12px;}
+.prototype-notice > span:last-child{color:#475569;}
+.notice-dot{width:9px;height:9px;border-radius:50%;background:#60a5fa;flex-shrink:0;}
+.status-pulse-demo{background:#60a5fa;box-shadow:0 0 0 4px #dbeafe;}
+.operations-header .operations-status{white-space:normal;text-align:left;line-height:1.5;max-width:320px;}
+.stats-cards .card:nth-child(3) h3{font-family:var(--font-sans);font-size:26px;}
+.stats-cards .card:nth-child(2) h3{font-size:27px;}
+.stats-cards .card .card-subtext{line-height:1.45;}
+.room-filtered-out{opacity:.18!important;filter:grayscale(1)!important;pointer-events:none!important;}
+.room-block:focus-visible{outline:4px solid var(--primary);outline-offset:2px;}
+.room-block.dashboard-selected-room{border-color:#2563eb;box-shadow:0 0 0 4px rgba(37,99,235,.22),0 10px 26px rgba(37,99,235,.17);z-index:3;}
+.ranking-row[role="button"],.alert-row[role="button"]{cursor:pointer;}
+.ranking-row:focus-visible,.alert-row:focus-visible{outline:3px solid var(--primary);outline-offset:2px;}
+.energy-operations .performance-panel{
+    background:linear-gradient(160deg,#f8fbff 0%,#fff 70%);
+    border:1px solid #dbeafe;
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 8px 24px rgba(37,99,235,.07);
+    min-width:0;
+}
+.performance-hero{display:flex;align-items:center;gap:20px;padding:22px 0 20px;border-bottom:1px solid #e2e8f0;}
+.performance-ring{
+    width:125px;height:125px;flex:0 0 125px; border-radius:50%;
+    background:conic-gradient(var(--secondary) 0 16%,#e2e8f0 16% 100%);
+    display:grid;place-items:center;
+}
+.performance-ring-inner{
+    width:98px;height:98px;border-radius:50%;display:flex;
+    flex-direction:column;justify-content:center;align-items:center;
+    background:#fff;text-align:center;
+}
+.performance-ring-inner strong{font:800 26px var(--font-mono);letter-spacing:-1px;color:#0f172a;}
+.performance-ring-inner small{font-size:10px;color:var(--muted);font-weight:700;}
+.performance-copy{min-width:0;}
+.performance-copy>span,.performance-metrics span{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;}
+.performance-copy>strong{font:800 19px var(--font-mono);color:#0f172a;display:block;margin-bottom:7px;}
+.performance-copy p{font-size:11px;line-height:1.6;color:#64748b;}
+.performance-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px;}
+.performance-metrics>div{background:#fff;border:1px solid #e2e8f0;border-radius:11px;padding:13px;min-width:0;}
+.performance-metrics strong{font:700 13px var(--font-mono);overflow-wrap:anywhere;}
+.performance-caption{margin-top:15px;padding:11px 12px;border-radius:10px;background:#eaf2ff;color:#475569;font-size:11px;line-height:1.6;}
+.text-action{margin-top:9px;border:0;background:transparent;color:#1d4ed8;font-size:11px;font-weight:800;cursor:pointer;padding:3px 0;}
+.text-action:hover{text-decoration:underline;}
+.energy-mix-panel,.savings-panel{min-width:0;}
+.mini-description{margin:12px 0 16px;font-size:11px;line-height:1.65;color:#64748b;max-width:68ch;}
+.mix-meter{display:flex;gap:3px;height:19px;border-radius:9px;overflow:hidden;margin:15px 0 8px;background:#e2e8f0;}
+.mix-meter span{transition:width .3s ease;}
+.mix-meter span:nth-child(1){width:43%;background:#2563eb;}
+.mix-meter span:nth-child(2){width:26%;background:#14b8a6;}
+.mix-meter span:nth-child(3){width:20%;background:#f59e0b;}
+.mix-meter span:nth-child(4){width:11%;background:#a78bfa;}
+.mix-rows{margin-top:8px;}
+.mix-row{display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid #eef2f7;}
+.mix-dot{width:11px;height:11px;border-radius:4px;}
+.mix-hvac{background:#2563eb;}.mix-light{background:#14b8a6;}.mix-water{background:#f59e0b;}.mix-other{background:#a78bfa;}
+.mix-row>div>strong{font-size:12px;display:block;}
+.mix-row small{display:block;font-size:10px;color:#64748b;margin-top:3px;}
+.mix-row>strong{font:700 12px var(--font-mono);white-space:nowrap;}
+.mix-note{font-size:10px;color:#64748b;line-height:1.55;margin-top:13px;}
+.savings-badge{color:#1d4ed8;background:#dbeafe;}
+.scenario-controls{background:#f8fbff;border:1px solid #dbeafe;border-radius:13px;padding:16px;margin-top:12px;}
+.scenario-label{display:flex;justify-content:space-between;gap:14px;align-items:center;}
+.scenario-label label,.tariff-control label{font-size:12px;font-weight:700;color:#334155;}
+.scenario-label strong{font:800 17px var(--font-mono);color:#1d4ed8;}
+#reductionRange{width:100%;accent-color:#2563eb;cursor:pointer;margin:16px 0 5px;}
+.range-markers{display:flex;justify-content:space-between;color:#64748b;font-size:10px;}
+.tariff-control{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:17px;padding-top:15px;border-top:1px solid #dbeafe;}
+.tariff-input-wrap{display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #cbd5e1;border-radius:9px;padding:7px 9px;color:#64748b;}
+.tariff-input-wrap input{width:67px;border:0;outline:0;font-family:var(--font-mono);font-size:13px;color:#0f172a;}
+.tariff-input-wrap:focus-within{outline:2px solid #93c5fd;}
+.savings-results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px;}
+.savings-results>div{padding:14px;border:1px solid #e2e8f0;border-radius:11px;background:#fff;min-width:0;}
+.savings-results span{display:block;font-size:10px;color:#64748b;margin-bottom:7px;}
+.savings-results strong{font:800 18px var(--font-mono);white-space:normal;overflow-wrap:anywhere;}
+.savings-results .savings-highlight{background:linear-gradient(140deg,#dcfce7,#f0fdf4);border-color:#86efac;grid-column:auto;}
+.savings-results .savings-highlight strong{color:#15803d;}
+.savings-results>div:last-child{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:center;gap:15px;}
+.savings-results>div:last-child span{margin:0;}
+.scenario-callout{margin-top:11px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:10px;line-height:1.5;}
+.handover-strip{margin-top:18px;padding:13px 16px;border-radius:12px;background:#eff6ff;border:1px solid #dbeafe;color:#475569;font-size:11px;line-height:1.65;}
+.handover-strip code{font-family:var(--font-mono);font-size:10px;color:#1d4ed8;overflow-wrap:anywhere;}
+@media (max-width:1200px){.operations-grid{grid-template-columns:minmax(0,1fr) minmax(310px,.86fr);} .load-summary{grid-template-columns:1fr;}}
+@media (max-width:1000px){.operations-grid{grid-template-columns:1fr;}.operations-bottom-grid{grid-template-columns:1fr 1fr;}}
+@media (max-width:760px){.operations-bottom-grid{grid-template-columns:1fr;}.performance-hero{gap:14px;}}
+@media (max-width:480px){.performance-hero{flex-direction:column;align-items:flex-start;} .performance-metrics,.savings-results{grid-template-columns:1fr;}.savings-results>div:last-child{grid-column:auto;display:block;}.savings-results>div:last-child span{margin-bottom:6px;} .tariff-control{align-items:flex-start;flex-direction:column;}.operations-header .operations-status{max-width:100%;} .prototype-notice{align-items:flex-start;} .mix-row>strong{font-size:11px;}}
+
+
+/* ================================================
+   REFINED ENERGY OVERVIEW — CLIENT PRESENTATION
+   One integrated panel replaces four oversized cards.
+================================================ */
+.top-bar{
+    padding:21px 28px;
+    margin-bottom:18px;
+    background:linear-gradient(112deg,#edf4ff,#f3f1ff 90%);
+}
+.top-bar h1{font-size:30px;letter-spacing:-0.8px;margin-bottom:7px;}
+.dashboard-label{font-size:10px;letter-spacing:2px;margin-bottom:8px;}
+.dashboard-note{font-size:13px;max-width:58ch;line-height:1.5;}
+.search-box{width:265px;}
+.executive-overview{
+    display:grid;grid-template-columns:minmax(290px,0.92fr) minmax(0,1.65fr);
+    overflow:hidden;background:white;border:1px solid #dbeafe;
+    border-radius:22px;box-shadow:0 10px 30px rgba(37,99,235,.07);
+    margin-bottom:24px;min-height:185px;
+}
+.overview-primary{
+    position:relative;overflow:hidden;
+    padding:24px 29px 20px;
+    background:linear-gradient(145deg,#e5efff 0%,#f0f6ff 75%);
+    border-right:1px solid #dbeafe;
+}
+.overview-primary::after{content:'';position:absolute;right:-65px;top:-85px;border:35px solid rgba(37,99,235,.045);width:155px;height:155px;border-radius:50%;pointer-events:none;}
+.overview-main-label{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;color:#24456f;}
+.overview-energy-icon{display:inline-grid;place-items:center;background:#2563eb;color:#fff;width:26px;height:26px;border-radius:8px;font-size:15px;}
+.overview-period{margin-left:auto;background:white;border:1px solid #c7ddff;color:#1d4ed8;padding:5px 10px;border-radius:999px;font-size:10px;white-space:nowrap;}
+.overview-total{display:flex;align-items:baseline;gap:9px;margin:15px 0 9px;}
+.overview-total strong{font-family:var(--font-mono);font-size:39px;font-weight:800;letter-spacing:-1.6px;line-height:1.05;color:#0f172a;font-variant-numeric:tabular-nums;}
+.overview-total>span{font-family:var(--font-mono);color:#64748b;font-size:14px;font-weight:700;}
+.overview-performance{display:flex;align-items:center;gap:10px;color:#64748b;font-size:11px;}
+.overview-trend{font-family:var(--font-mono);font-weight:800;color:#15803d;background:#dcfce7;border-radius:20px;padding:4px 8px;}
+.overview-trend.overview-trend-increase{color:#b45309;background:#fef3c7;}
+.overview-footer{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:15px;font-size:11px;color:#1d4ed8;font-weight:700;}
+.overview-sparkline{width:120px;height:28px;color:#2563eb;flex-shrink:0;}
+.overview-secondary{min-width:0;padding:24px 20px 20px 25px;display:flex;flex-direction:column;justify-content:center;}
+.overview-secondary-header{display:flex;gap:14px;align-items:center;margin-bottom:17px;font-size:11px;font-weight:800;color:#64748b;letter-spacing:.2px;}
+.overview-header-line{height:1px;flex:1;background:#e2e8f0;}
+.overview-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));}
+.overview-metric{display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding:2px 17px 0;gap:6px;}
+.overview-metric:first-child{padding-left:0;}
+.overview-metric+ .overview-metric{border-left:1px solid #e8eef8;}
+.overview-metric-icon{display:grid;place-items:center;width:29px;height:29px;background:#eff6ff;border-radius:9px;color:#2563eb;font-size:15px;font-weight:800;margin-bottom:3px;}
+.overview-metric .icon-cost{background:#fff4d6;color:#a16207;}
+.overview-metric .icon-floor{background:#e6faf4;color:#0f766e;}
+.overview-metric .icon-room{background:#fee2e2;color:#dc2626;}
+.overview-metric-title{font-size:11px;color:#64748b;line-height:1.3;font-weight:650;}
+.overview-metric strong{font:800 clamp(17px,2vw,25px)/1.2 var(--font-mono);white-space:normal;overflow-wrap:anywhere;letter-spacing:-.6px;}
+.overview-metric small{font-size:10px;color:#71809a;line-height:1.35;}
+@media(max-width:980px){
+ .executive-overview{grid-template-columns:1fr;}
+ .overview-primary{border-right:none;border-bottom:1px solid #dbeafe;}
+ .overview-secondary{padding:20px 25px 24px;}
+ .overview-metric strong{font-size:21px;}
+}
+@media(max-width:600px){
+ .top-bar{padding:21px;}
+ .top-bar h1{font-size:26px;}
+ .top-actions,.search-box{width:100%;}
+ .executive-overview{border-radius:17px;}
+ .overview-primary{padding:20px;}
+ .overview-total strong{font-size:35px;}
+ .overview-secondary{padding:18px 18px 21px;}
+ .overview-metrics{grid-template-columns:1fr;gap:0;}
+ .overview-metric{display:grid;grid-template-columns:31px minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;padding:11px 0!important;border-left:0!important;border-bottom:1px solid #e8eef8;}
+ .overview-metric:last-child{border-bottom:0;}
+ .overview-metric-icon{grid-row:span 2;margin:0;}
+ .overview-metric strong{grid-column:3;grid-row:1 / span 2;font-size:18px;}
+ .overview-metric-title{grid-column:2;grid-row:1;}
+ .overview-metric small{grid-column:2;grid-row:2;}
+}
+
+/* ==============================================================
+   WEEK 11 — PRESENTATION TYPOGRAPHY & READABILITY REFINEMENT
+   Improves hierarchy, contrast and legibility throughout the
+   energy dashboard while preserving the established visual design.
+   =============================================================== */
+:root{
+    --readable-muted:#52627a;
+    --readable-strong:#102340;
+}
+body{font-size:15px;line-height:1.55;}
+.dashboard-container{max-width:96%;}
+
+/* Heading hierarchy and supporting copy */
+.top-bar h1{font-size:clamp(29px,2.5vw,36px);letter-spacing:-.6px;}
+.dashboard-label{font-size:12px;letter-spacing:1.8px;}
+.dashboard-note{font-size:15px;line-height:1.6;color:var(--readable-muted);}
+.section-title-row h3{font-size:23px;}
+.section-title-row p,.enhancement-header p,.filter-heading p{font-size:14.5px;line-height:1.6;color:var(--readable-muted);}
+.enhancement-header h3,.filter-heading h3,.energy-summary-card h3{font-size:20px;line-height:1.35;}
+.energy-operations .operations-header h2{font-size:26px;letter-spacing:-.3px;}
+.energy-operations .operations-header p{font-size:14.5px;line-height:1.6;color:var(--readable-muted);}
+.energy-operations .operations-card-heading h3,
+.energy-operations .mini-heading h3{font-size:19px;line-height:1.4;}
+.section-kicker,.card-eyebrow{font-size:11.5px;letter-spacing:1.1px;line-height:1.4;}
+.period-badge,.filter-result,.load-chip,.issue-count,.network-count,.operations-status,.live-badge{font-size:12.5px;line-height:1.35;}
+
+/* Integrated overview: clear hierarchy, strong numbers */
+.overview-main-label{font-size:14px;}
+.overview-period{font-size:12px;}
+.overview-total strong{font-size:clamp(38px,3vw,46px);}
+.overview-total>span{font-size:17px;}
+.overview-performance{font-size:13.5px;flex-wrap:wrap;}
+.overview-footer{font-size:13px;}
+.overview-secondary-header{font-size:13px;margin-bottom:19px;color:#475569;}
+.overview-metric-title{font-size:13px;color:var(--readable-muted);font-weight:650;}
+.overview-metric strong{font-size:clamp(20px,1.9vw,27px);color:var(--readable-strong);}
+.overview-metric small{font-size:12.5px;color:var(--readable-muted);}
+.overview-secondary{padding-top:23px;padding-bottom:23px;}
+.overview-metric{gap:7px;}
+
+/* Floor plan + room details: usable labels instead of miniature captions */
+.search-box input{font-size:15px;min-height:48px;}
+.search-hint{font-size:13px;}
+.energy-alert{font-size:14.5px;line-height:1.6;}
+.floor-btn{font-size:14px;min-height:43px;}
+.legend-item{font-size:13px;}
+.room-block span{font-size:13px;}
+.room-block small{font-size:12px;}
+.room-detail-panel h3{font-size:19px;}
+.panel-label{font-size:12px;}
+.panel-info-row{font-size:14px;gap:9px;}
+.panel-info-row strong{font-size:14px;text-align:right;}
+.panel-note{font-size:13.5px;color:var(--readable-muted);}
+.summary-box strong{font-size:13px;}
+.summary-box p{font-size:16px;}
+.summary-box small,.cost-line{font-size:13px;}
+.rank-list li{font-size:13.5px;}
+
+/* Filters and usage comparisons */
+.filter-group label{font-size:12.5px;color:#445570;}
+.filter-group select,.filter-reset{font-size:14.5px;min-height:47px;}
+.comparison-total{padding:18px;}
+.comparison-total span{font-size:14px;color:var(--readable-muted);}
+.comparison-total strong{font-size:clamp(22px,2vw,27px);color:var(--readable-strong);}
+.comparison-change{padding:13px 16px;gap:12px;flex-wrap:wrap;}
+.comparison-change strong{font-size:15px;}
+.comparison-change span{font-size:13.5px;color:var(--readable-muted);}
+.floor-comparison-heading strong{font-size:15px;}
+.floor-comparison-heading span{font-size:13px;color:var(--readable-muted);}
+.floor-compare-row{grid-template-columns:68px minmax(0,1fr) 104px;gap:13px;margin-top:13px;}
+.floor-compare-row>span{font-size:13px;color:#475569;}
+.floor-compare-row>strong{font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.floor-compare-track{height:10px;}
+
+/* Historical chart, efficiency, top consumers and review list */
+.chart-y-labels,.chart-x-labels{font-size:12px;color:#52627a;}
+.chart-y-labels{width:48px;}
+.history-summary span{font-size:13px;}
+.history-summary strong{font-size:16px;}
+.score-labels{font-size:12px;color:var(--readable-muted);}
+.efficiency-item,.efficiency-item strong{font-size:14.5px;}
+.efficiency-tip,.efficiency-tip strong{font-size:13.5px;line-height:1.6;}
+.ranking-row{grid-template-columns:29px 103px minmax(0,1fr) 77px;gap:12px;}
+.rank-number{font-size:12px;width:27px;height:27px;}
+.ranking-info strong{font-size:14.5px;}
+.ranking-info small{font-size:12.5px;color:var(--readable-muted);}
+.ranking-value{font-size:13.5px;font-variant-numeric:tabular-nums;}
+.alert-row{padding:12px;gap:11px;}
+.alert-row strong{font-size:14px;}
+.alert-row small{font-size:12.5px;line-height:1.5;color:var(--readable-muted);}
+.alert-icon{font-size:14px;width:28px;height:28px;}
+
+/* Energy Operations: legible floor comparisons and analysis labels */
+.energy-operations{padding:30px;}
+.energy-operations .energy-load-panel,
+.energy-operations .performance-panel,
+.energy-operations .operations-mini-card{padding:24px;}
+.load-meta span{font-size:12.5px;color:var(--readable-muted);}
+.load-meta strong{font-size:15px;}
+.load-total small{font-size:13px;line-height:1.45;}
+.distribution-heading strong{font-size:15px;}
+.distribution-heading span{font-size:13px;color:var(--readable-muted);}
+.operations-floor-row{grid-template-columns:90px minmax(60px,1fr) 99px;gap:12px;margin:15px 0;}
+.operations-floor-name strong{font-size:13.5px;}
+.operations-floor-name span{font-size:12px;color:var(--readable-muted);}
+.operations-floor-value{font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.energy-insight{padding:16px;}
+.energy-insight strong{font-size:14px;}
+.energy-insight p{font-size:13px;line-height:1.6;color:var(--readable-muted);}
+.text-action{font-size:13.5px;padding:5px 0;}
+
+/* Supervisor feedback: the kWh avoided is a distinct, high-contrast RED key figure. */
+.performance-hero{gap:18px;align-items:center;}
+.performance-ring-inner strong{font-size:27px;}
+.performance-ring-inner small{font-size:12px;}
+.performance-copy{flex:1;min-width:0;padding:5px 0;}
+.performance-copy>span{font-size:13px;color:var(--readable-muted);font-weight:650;}
+.performance-copy>strong{
+    display:block;
+    margin:7px 0 11px;
+    padding:12px 13px;
+    font:800 clamp(19px,1.7vw,23px)/1.3 var(--font-mono);
+    letter-spacing:-.5px;
+    color:#b91c1c;
+    background:#fff1f2;
+    border:1px solid #fecdd3;
+    border-left:4px solid #dc2626;
+    border-radius:10px;
+    overflow-wrap:anywhere;
+    font-variant-numeric:tabular-nums;
+}
+.performance-copy p{font-size:13px;line-height:1.6;color:var(--readable-muted);}
+.performance-metrics span{font-size:12.5px;color:var(--readable-muted);}
+.performance-metrics strong{font:700 14px/1.4 var(--font-mono);color:var(--readable-strong);}
+.performance-metrics>div{padding:14px;}
+.performance-caption{font-size:12.5px;line-height:1.6;color:#445570;}
+
+/* Service mix and reduction scenario */
+.mini-description{font-size:13.5px;color:var(--readable-muted);line-height:1.65;}
+.mix-row{padding:15px 2px;gap:12px;}
+.mix-row>div>strong{font-size:14.5px;}
+.mix-row small{font-size:12.5px;color:var(--readable-muted);}
+.mix-row>strong{font:700 13.5px var(--font-mono);font-variant-numeric:tabular-nums;}
+.mix-note{font-size:12.5px;color:var(--readable-muted);line-height:1.6;}
+.scenario-label label,.tariff-control label{font-size:14px;line-height:1.5;}
+.scenario-label strong{font-size:19px;}
+.range-markers{font-size:12.5px;}
+.tariff-input-wrap input{font-size:15px;width:74px;}
+.savings-results>div{padding:16px;}
+.savings-results span{font-size:12.5px;color:var(--readable-muted);}
+.savings-results strong{font:800 19px/1.35 var(--font-mono);}
+.scenario-callout{font-size:12.5px;line-height:1.6;}
+
+/* Keep enlarged copy comfortable and collision-free on smaller screens */
+@media(max-width:1200px){
+    .energy-operations .performance-panel{padding:22px;}
+    .performance-copy>strong{font-size:21px;}
+}
+@media(max-width:980px){
+    .overview-metric strong{font-size:23px;}
+    .overview-metric-title{font-size:14px;}
+}
+@media(max-width:760px){
+    .energy-operations{padding:21px;}
+    .energy-operations .energy-load-panel,
+    .energy-operations .performance-panel,
+    .energy-operations .operations-mini-card{padding:20px;}
+    .operations-floor-row{grid-template-columns:85px minmax(0,1fr) 90px;gap:10px;}
+    .floor-compare-row{grid-template-columns:63px minmax(0,1fr) 94px;gap:9px;}
+    .ranking-row{grid-template-columns:27px 92px minmax(0,1fr) 66px;gap:8px;}
+    .ranking-value{font-size:12.5px;}
+}
+@media(max-width:480px){
+    .top-bar h1{font-size:28px;}
+    .overview-main-label{font-size:13px;}
+    .overview-metric{grid-template-columns:32px minmax(0,1fr) auto;}
+    .overview-metric strong{font-size:19px;}
+    .overview-metric small{font-size:12px;}
+    .overview-secondary-header{font-size:13px;}
+    .history-summary strong{font-size:14px;}
+    .history-summary span{font-size:12.5px;}
+    .score-labels{font-size:11px;}
+    .performance-hero{align-items:stretch;}
+    .performance-copy>strong{font-size:22px;}
+    .operations-floor-row{grid-template-columns:79px minmax(0,1fr) 79px;gap:8px;}
+    .operations-floor-value{font-size:11.5px;}
+    .floor-compare-row{grid-template-columns:55px minmax(0,1fr) 80px;}
+    .floor-compare-row>strong{font-size:11.5px;}
+    .ranking-row{grid-template-columns:24px 75px minmax(0,1fr) 62px;gap:7px;}
+    .ranking-info strong{font-size:13px;}
+    .ranking-info small{font-size:11.5px;}
+    .ranking-value{font-size:11.5px;}
+    .mix-row>strong{font-size:12.5px;}
+    .comparison-total strong{font-size:23px;}
+}
+
+/* Small finishing touches for supporting indicators */
+.rank-num{font-size:11.5px;}
+.alert-count{font-size:12.5px;}
+.corridor{font-size:12px;}
