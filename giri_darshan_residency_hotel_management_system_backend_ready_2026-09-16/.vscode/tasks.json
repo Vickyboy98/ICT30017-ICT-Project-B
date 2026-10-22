@@ -1,0 +1,44 @@
+{
+  // Press Ctrl+Shift+B to start the backend, then open the site with Live Server ("Go Live").
+  // No Live Server? Run the task "Start backend + website" instead.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install backend packages",
+      "type": "shell",
+      "command": "npm install",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Start backend (API :5000)",
+      "type": "shell",
+      "command": "npm start",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "isBackground": true,
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "panel": "dedicated", "group": "giri-darshan" },
+      "problemMatcher": {
+        "pattern": { "regexp": "^__never_matches__$" },
+        "background": { "activesBegin": ".", "beginsPattern": ".", "endsPattern": "backend running on" }
+      }
+    },
+    {
+      "label": "Start website (:5500)",
+      "type": "shell",
+      "command": "node backend/scripts/serve-frontend.js",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "giri-darshan" },
+      "problemMatcher": {
+        "pattern": { "regexp": "^__never_matches__$" },
+        "background": { "activesBegin": ".", "beginsPattern": ".", "endsPattern": "website running on" }
+      }
+    },
+    {
+      "label": "Start backend + website",
+      "dependsOn": ["Start backend (API :5000)", "Start website (:5500)"],
+      "problemMatcher": []
+    }
+  ]
+}
