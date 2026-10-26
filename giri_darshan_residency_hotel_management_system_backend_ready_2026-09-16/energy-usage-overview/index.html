@@ -1146,6 +1146,9 @@
       };
       let selectedPeriod = '7days';
       let selectedRoom = null;
+      // Live mode: room values are the latest power draw in watts from hotel_db, not kWh totals.
+      let liveMode = false;
+      let liveTotalWatts = 0;
       const money = n =>
         new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(n);
       const count = n => new Intl.NumberFormat('en-AU', { maximumFractionDigits: 1 }).format(n);
@@ -1167,6 +1170,11 @@
       function roomKwh(room) {
         return Number(room.dataset.kwh || 0);
       }
+      function roomReading(room) {
+        if (liveMode)
+          return roomStatus(room) === 'none' ? 'No reading' : count(roomKwh(room)) + ' W';
+        return count(roomKwh(room)) + ' kWh';
+      }
       function roomStatus(room) {
         return (room.dataset.usageStatus || 'normal').toLowerCase();
       }
@@ -1177,10 +1185,10 @@
         return roomBlocks().sort((a, b) => roomKwh(b) - roomKwh(a));
       }
       function showFloor(num) {
-        [1, 2, 3].forEach(i => {
-          const f = get('floor' + i),
+        document.querySelectorAll('.floor-plan').forEach(f => {
+          const i = Number(f.id.replace('floor', '')),
             b = get('floorBtn' + i);
-          if (f) f.style.display = i === num ? 'flex' : 'none';
+          f.style.display = i === num ? 'flex' : 'none';
           if (b) {
             b.classList.toggle('active-floor-btn', i === num);
             b.setAttribute('aria-pressed', String(i === num));
@@ -1194,17 +1202,24 @@
         roomBlocks().forEach(x => x.classList.toggle('dashboard-selected-room', x === room));
         set('panelRoom', room.dataset.room);
         set('panelSensor', room.dataset.sensor || 'Not mapped');
-        set('panelEnergy', count(roomKwh(room)) + ' kWh');
+        set('panelEnergy', roomReading(room));
         const status = roomStatus(room);
         set(
           'panelStatus',
-          status === 'high' ? 'High Usage' : status === 'medium' ? 'Medium Usage' : 'Normal Usage'
+          status === 'none'
+            ? 'No reading'
+            : status === 'high'
+              ? 'High Usage'
+              : status === 'medium'
+                ? 'Medium Usage'
+                : 'Normal Usage'
         );
         set('panelSensorStatus', room.dataset.sensorStatus || '—');
         set('panelNote', room.dataset.note || 'Room energy reading.');
         const bar = get('panelBar');
         if (bar) {
-          bar.style.width = Math.max(5, Math.min(100, (roomKwh(room) / 60) * 100)) + '%';
+          const scale = liveMode ? Math.max(1, roomKwh(topRooms()[0])) : 60;
+          bar.style.width = Math.max(5, Math.min(100, (roomKwh(room) / scale) * 100)) + '%';
           bar.style.background =
             status === 'high'
               ? 'linear-gradient(135deg,#ef4444,#fb7185)'
@@ -1212,6 +1227,7 @@
                 ? 'linear-gradient(135deg,#f59e0b,#fbbf24)'
                 : 'linear-gradient(135deg,#22c55e,#86efac)';
         }
+        if (liveMode) renderPanelLive(room);
       }
       function openRoomFromDashboard(roomName, floor) {
         const room = roomBlocks().find(r => r.dataset.room === roomName);
@@ -1222,18 +1238,24 @@
       }
       function applyRoomStatusFilter() {
         const selected = get('statusFilter').value;
+        // In live mode the first filter selects a room type instead of a time period.
+        const type = liveMode ? get('periodFilter').value : 'all';
         let hits = 0;
         roomBlocks().forEach(room => {
           const match =
-            selected === 'all' ||
-            (selected === 'warning' ? sensorWarning(room) : roomStatus(room) === selected);
+            (selected === 'all' ||
+              (selected === 'warning' ? sensorWarning(room) : roomStatus(room) === selected)) &&
+            (type === 'all' || room.dataset.roomType === type);
           room.classList.toggle('room-filtered-out', !match);
           room.tabIndex = match ? 0 : -1;
           if (match) hits++;
         });
         const label =
           selected === 'all' ? 'All rooms' : get('statusFilter').selectedOptions[0].textContent;
-        set('filterResult', hits + ' matching rooms · ' + label);
+        set(
+          'filterResult',
+          hits + ' matching rooms · ' + label + (type === 'all' ? '' : ' · ' + type)
+        );
       }
       function clearRoomSearch() {
         get('roomSearch').value = '';
@@ -1282,7 +1304,7 @@
           if (name) name.textContent = room.dataset.room;
           if (floor) floor.textContent = 'Floor ' + room.dataset.floor;
           const value = row.querySelector('.ranking-value');
-          if (value) value.textContent = count(roomKwh(room)) + ' kWh';
+          if (value) value.textContent = roomReading(room);
           const bar = row.querySelector('.ranking-bar span');
           if (bar) bar.style.width = (100 * roomKwh(room)) / Math.max(1, roomKwh(highest[0])) + '%';
           row.dataset.room = room.dataset.room;
@@ -1295,24 +1317,26 @@
             if (n.nodeType === Node.TEXT_NODE) n.textContent = '';
           });
           if (num) num.insertAdjacentText('afterend', highest[i].dataset.room);
-          if (value) value.textContent = count(roomKwh(highest[i])) + ' kWh';
+          if (value) value.textContent = roomReading(highest[i]);
         });
         const best = highest[0];
         if (best) {
           set('statTopRoom', best.dataset.room.replace('Room ', ''));
-          set('statTopRoomUsage', count(roomKwh(best)) + ' kWh today');
+          set('statTopRoomUsage', roomReading(best) + (liveMode ? ' now' : ' today'));
         }
         const watch = document.querySelector('.energy-alert');
         if (watch && best)
           watch.textContent =
             'Energy watch: ' +
             best.dataset.room +
-            ' has the highest room reading today (' +
-            count(roomKwh(best)) +
-            ' kWh). Select it to view details.';
+            (liveMode
+              ? ' has the highest current power draw ('
+              : ' has the highest room reading today (') +
+            roomReading(best) +
+            '). Select it to view details.';
       }
       function renderRoomProfile() {
-        const all = roomBlocks();
+        const all = roomBlocks().filter(r => roomStatus(r) !== 'none');
         const n = all.length || 1;
         const statuses = ['normal', 'medium', 'high'].map(
           s => all.filter(r => roomStatus(r) === s).length
@@ -1323,7 +1347,7 @@
         const h = profile.querySelector('.enhancement-header h3');
         if (h) h.textContent = 'Room Usage Profile';
         const score = profile.querySelector('.efficiency-score');
-        if (score) score.textContent = n + ' rooms';
+        if (score) score.textContent = all.length + (liveMode ? ' reporting' : ' rooms');
         const fill = profile.querySelector('.score-fill');
         if (fill) fill.style.width = perc[0] + '%';
         profile
@@ -1380,6 +1404,23 @@
         return (data.total <= data.previous ? '↓ ' : '↑ ') + percentage(data).toFixed(1) + '%';
       }
       function renderSavings() {
+        if (liveMode) {
+          // Live readings are instantaneous draw, so costs are per hour at that draw.
+          const kwNow = liveTotalWatts / 1000,
+            rate = tariff(),
+            pct = reduction(),
+            saved = (kwNow * pct) / 100;
+          set('reductionLabel', pct + '%');
+          set('savingsKwh', count(saved) + ' kWh per hour');
+          set('savingsMoney', money(saved * rate) + '/h');
+          set('savingsNewCost', money((kwNow - saved) * rate) + '/h');
+          set('summarySavings', money(saved * rate) + ' per hour');
+          set('statCost', money(kwNow * rate) + '/h');
+          set('summaryCost', '≈ ' + money(kwNow * rate) + ' per hour at this draw');
+          set('comparisonCost', 'Estimated cost: ' + money(kwNow * rate) + ' per hour');
+          set('opsCost', money(kwNow * rate) + '/h');
+          return;
+        }
         const data = periodData[selectedPeriod],
           rate = tariff(),
           pct = reduction(),
@@ -1584,7 +1625,7 @@
         }
       };
       // Room interaction + keyboard accessibility
-      roomBlocks().forEach(room => {
+      function bindRoom(room) {
         room.setAttribute('role', 'button');
         room.tabIndex = 0;
         room.setAttribute('aria-label', room.dataset.room + ' energy detail');
@@ -1597,7 +1638,8 @@
             showRoomDetails(room);
           }
         });
-      });
+      }
+      roomBlocks().forEach(bindRoom);
       document.querySelectorAll('.ranking-row').forEach(row => {
         row.setAttribute('role', 'button');
         row.tabIndex = 0;
@@ -1609,7 +1651,7 @@
           }
         });
       });
-      document.querySelectorAll('.alert-row').forEach(row => {
+      function bindAlertRow(row) {
         const label = row.querySelector('strong'),
           match = label && label.textContent.match(/Room \d+/);
         if (!match) return;
@@ -1622,25 +1664,945 @@
             row.click();
           }
         });
-      });
+      }
+      document.querySelectorAll('.alert-row').forEach(bindAlertRow);
       get('roomSearch').addEventListener('input', searchRooms);
       get('clearSearch').addEventListener('click', clearRoomSearch);
       get('statusFilter').addEventListener('change', () => {
         applyRoomStatusFilter();
         if (get('roomSearch').value) searchRooms();
       });
-      get('periodFilter').addEventListener('change', e => renderPeriod(e.target.value));
+      get('periodFilter').addEventListener('change', e =>
+        liveMode ? applyRoomStatusFilter() : renderPeriod(e.target.value)
+      );
       get('resetFilters').addEventListener('click', () => {
-        get('periodFilter').value = '7days';
         get('statusFilter').value = 'all';
+        get('periodFilter').value = liveMode ? 'all' : '7days';
         clearRoomSearch();
-        renderPeriod('7days');
+        if (!liveMode) renderPeriod('7days');
       });
       get('reductionRange').addEventListener('input', renderSavings);
       get('tariffInput').addEventListener('input', renderSavings);
       get('inspectPriorityRoom').addEventListener('click', e =>
         openRoomFromDashboard(e.currentTarget.dataset.room)
       );
+      // ===== LIVE READINGS =====
+      // Loaded from the Giri Darshan API (GET /api/energy/hotel-readings), which reads the
+      // room_power_usage table in the hotel_db database on Aiven. The admin dashboard sends the
+      // signed-in user's token to this iframe with postMessage({type:'gdr-energy-session'}).
+      const ENERGY_API = 'http://localhost:5000/api/energy/hotel-readings';
+      const HIGH_WATTS = 1800,
+        MEDIUM_WATTS = 1000;
+      const LEVEL_CLASS = {
+        normal: 'room-low',
+        medium: 'room-medium',
+        high: 'room-high',
+        none: 'room-nodata'
+      };
+      const API_BASE = 'http://localhost:5000/api';
+      // Readings older than this are flagged as out of date.
+      const STALE_HOURS = 24;
+      const ISSUE_TYPES = [
+        'High energy use',
+        'Air conditioning fault',
+        'Television fault',
+        'Microwave fault',
+        'Other'
+      ];
+      const STAY_STATUS = {
+        pending: 'pending',
+        confirmed: 'confirmed',
+        checkedin: 'checked in',
+        checkedout: 'checked out'
+      };
+      let liveToken = '';
+      let liveTimer = null;
+      // Latest hotel_db data by room name ("Room 101") and average draw by room type.
+      const liveRooms = new Map();
+      const typeAverages = new Map();
+      let lastReport = null;
+      function usageLevel(watts) {
+        return watts >= HIGH_WATTS ? 'high' : watts >= MEDIUM_WATTS ? 'medium' : 'normal';
+      }
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+      function when(value) {
+        return value
+          ? new Date(value).toLocaleString('en-AU', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            })
+          : '—';
+      }
+      const kw = watts => count(watts / 1000);
+      const sum = values => values.reduce((total, n) => total + n, 0);
+      const shortDate = value =>
+        new Date(value).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      function ago(value) {
+        const hours = (Date.now() - new Date(value)) / 3600000;
+        if (hours < 1) return 'less than an hour ago';
+        if (hours < 48) return Math.round(hours) + ' hours ago';
+        return Math.round(hours / 24) + ' days ago';
+      }
+      // Specific, appliance-level findings for one room (highest priority first).
+      function roomFindings(r) {
+        const found = [];
+        const reading = r.reading;
+        if (reading) {
+          const issues = r.issues.map(i => i.issue.toLowerCase()).join(' ');
+          if (/air con|\bac\b/.test(issues) && reading.acWatts >= 200)
+            found.push([3, 'AC reported faulty but drawing ' + count(reading.acWatts) + ' W']);
+          if (/television|\btv\b/.test(issues) && reading.tvWatts >= 50)
+            found.push([3, 'TV reported faulty but drawing ' + count(reading.tvWatts) + ' W']);
+          if (reading.microwaveWatts >= 700)
+            found.push([
+              3,
+              'Microwave at ' + count(reading.microwaveWatts) + ' W · likely left running'
+            ]);
+          if (r.status !== 'occupied' && reading.totalWatts >= 100)
+            found.push([3, count(reading.totalWatts) + ' W while ' + r.status]);
+          const share = reading.totalWatts ? reading.acWatts / reading.totalWatts : 0;
+          if (reading.acWatts >= 1000 && share >= 0.7)
+            found.push([
+              2,
+              'AC is ' +
+                Math.round(100 * share) +
+                '% of the load (' +
+                count(reading.acWatts) +
+                ' W) · check thermostat'
+            ]);
+          const type = typeAverages.get(r.roomType);
+          if (type && type.rooms > 1 && reading.totalWatts >= 1.4 * type.avg)
+            found.push([
+              2,
+              Math.round((100 * (reading.totalWatts - type.avg)) / type.avg) +
+                '% above other ' +
+                r.roomType +
+                's'
+            ]);
+        }
+        return found.sort((a, b) => b[0] - a[0]);
+      }
+      // Occupied rooms whose latest stay has already ended (or that have no stay on record).
+      function staleStay(r) {
+        if (r.status !== 'occupied') return false;
+        if (!r.booking) return true;
+        const at = r.reading ? new Date(r.reading.recordedAt) : new Date();
+        return r.booking.status === 'checkedout' || new Date(r.booking.checkOut) < at;
+      }
+      async function reportIssue(roomId, issue, description) {
+        const response = await fetch(API_BASE + '/energy/hotel-maintenance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + liveToken },
+          body: JSON.stringify({ roomId, issue, description })
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || 'Could not report the issue.');
+        return body;
+      }
+      // Extra room detail in live mode: appliance split, room-type comparison, stay and issues.
+      function renderPanelLive(room) {
+        const box = get('panelLive');
+        if (!box) return;
+        const formOpen = box.querySelector('form:not([hidden])');
+        if (formOpen && box.dataset.room === room.dataset.room) return;
+        box.dataset.room = room.dataset.room;
+        box.replaceChildren();
+        const r = liveRooms.get(room.dataset.room);
+        if (!r) return;
+        const reading = r.reading;
+        if (reading) {
+          const parts = [
+            ['AC', reading.acWatts],
+            ['TV', reading.tvWatts],
+            ['Microwave', reading.microwaveWatts]
+          ];
+          const meter = el('div', 'mix-meter panel-mix');
+          meter.setAttribute('role', 'img');
+          meter.setAttribute(
+            'aria-label',
+            parts.map(([name, w]) => name + ' ' + count(w) + ' W').join(', ')
+          );
+          parts.forEach(([, w]) => {
+            const segment = el('span');
+            segment.style.width =
+              (reading.totalWatts ? (100 * w) / reading.totalWatts : 0).toFixed(1) + '%';
+            meter.append(segment);
+          });
+          box.append(
+            meter,
+            el(
+              'p',
+              'panel-live-line',
+              parts.map(([name, w]) => name + ' ' + count(w) + ' W').join(' · ')
+            )
+          );
+          const type = typeAverages.get(r.roomType);
+          if (type && type.rooms > 1 && type.avg) {
+            const diff = Math.round((100 * (reading.totalWatts - type.avg)) / type.avg);
+            box.append(
+              el(
+                'p',
+                'panel-live-line',
+                (diff > 0 ? '+' : '') +
+                  diff +
+                  '% vs other ' +
+                  r.roomType +
+                  's (avg ' +
+                  count(type.avg) +
+                  ' W)'
+              )
+            );
+          }
+        }
+        const stay = r.booking;
+        box.append(
+          el(
+            'p',
+            'panel-live-line',
+            stay
+              ? 'Stay ' +
+                  stay.ref +
+                  ' · ' +
+                  (STAY_STATUS[stay.status] || stay.status) +
+                  ' · ' +
+                  shortDate(stay.checkIn) +
+                  '–' +
+                  shortDate(stay.checkOut) +
+                  ' · ' +
+                  stay.guests +
+                  (stay.guests === 1 ? ' guest' : ' guests') +
+                  (reading
+                    ? ' · ' + count(Math.round(reading.totalWatts / stay.guests)) + ' W per guest'
+                    : '')
+              : 'No booking on record for this room.'
+          )
+        );
+        if (staleStay(r) && stay)
+          box.append(
+            el(
+              'p',
+              'panel-live-line panel-live-warning',
+              'Marked occupied, but this stay ended ' + shortDate(stay.checkOut) + '.'
+            )
+          );
+        // The room-type comparison is already shown above, so skip that finding here.
+        roomFindings(r)
+          .filter(([, text]) => !text.includes('% above other '))
+          .forEach(([, text]) => box.append(el('p', 'panel-live-line panel-live-warning', text)));
+        r.issues.forEach(i =>
+          box.append(
+            el(
+              'p',
+              'panel-live-line',
+              'Maintenance: ' +
+                i.issue +
+                ' (' +
+                i.status.replace('_', ' ') +
+                ', ' +
+                shortDate(i.reportedAt) +
+                ')'
+            )
+          )
+        );
+
+        // Report issue: a small inline form that writes to hotel_db.maintenance.
+        const toggle = el('button', 'text-action panel-report-toggle', 'Report issue →');
+        toggle.type = 'button';
+        const form = el('form', 'panel-report-form');
+        form.hidden = true;
+        const select = el('select');
+        select.setAttribute('aria-label', 'Issue type');
+        ISSUE_TYPES.forEach(t => select.append(new Option(t, t)));
+        const findings = roomFindings(r);
+        if (findings.length) {
+          const top = findings[0][1].toLowerCase();
+          select.value = /microwave/.test(top)
+            ? 'Microwave fault'
+            : /\btv\b/.test(top)
+              ? 'Television fault'
+              : /\bac\b/.test(top)
+                ? 'Air conditioning fault'
+                : 'High energy use';
+        }
+        const details = el('input');
+        details.type = 'text';
+        details.maxLength = 500;
+        details.placeholder = 'Details (optional)';
+        details.setAttribute('aria-label', 'Issue details');
+        details.value = findings.length ? findings[0][1] : '';
+        const submit = el('button', 'filter-reset', 'Send to maintenance');
+        submit.type = 'submit';
+        const message = el('p', 'panel-live-line');
+        message.setAttribute('role', 'status');
+        // Keeps the confirmation visible after the readings refresh re-renders the panel.
+        if (lastReport && lastReport.room === room.dataset.room)
+          message.textContent = lastReport.text;
+        form.append(select, details, submit);
+        toggle.addEventListener('click', () => {
+          form.hidden = !form.hidden;
+          if (!form.hidden) select.focus();
+        });
+        form.addEventListener('submit', async event => {
+          event.preventDefault();
+          submit.disabled = true;
+          try {
+            const result = await reportIssue(r.id, select.value, details.value);
+            form.hidden = true;
+            lastReport = {
+              room: room.dataset.room,
+              text: 'Reported to maintenance (#' + result.id + ').'
+            };
+            message.textContent = lastReport.text;
+            loadLiveReadings();
+          } catch (error) {
+            message.textContent =
+              error instanceof TypeError ? 'Cannot reach the backend.' : error.message;
+          } finally {
+            submit.disabled = false;
+          }
+        });
+        box.append(toggle, form, message);
+      }
+      function setSourceBanner(kind, text) {
+        let banner = get('dataSourceBanner');
+        if (!banner) {
+          banner = el('div', 'data-source-banner');
+          banner.id = 'dataSourceBanner';
+          banner.setAttribute('role', 'status');
+          document.querySelector('.top-bar').insertAdjacentElement('afterend', banner);
+        }
+        banner.className = 'data-source-banner is-' + kind;
+        banner.textContent = text;
+      }
+      // Watt averages are shown as whole numbers.
+      const average = values => (values.length ? Math.round(sum(values) / values.length) : 0);
+      // Same geometry as renderHistory, for any number of points (W instead of kWh).
+      function drawLiveChart(values, labels, description) {
+        const svg = document.querySelector('.energy-history-card svg');
+        const ceiling = Math.max(500, Math.ceil((Math.max(...values, 1) * 1.15) / 500) * 500);
+        const step = values.length > 1 ? 680 / (values.length - 1) : 0;
+        const pts = values.map((v, i) => [
+          values.length > 1 ? 10 + i * step : 350,
+          205 - (v / ceiling) * 185
+        ]);
+        const pointText = pts.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ');
+        svg.querySelector('.history-line').setAttribute('points', pointText);
+        svg
+          .querySelector('.history-area')
+          .setAttribute(
+            'points',
+            pointText +
+              ' ' +
+              pts[pts.length - 1][0].toFixed(1) +
+              ',205 ' +
+              pts[0][0].toFixed(1) +
+              ',205'
+          );
+        const circles = [...svg.querySelectorAll('.chart-point')];
+        while (circles.length < values.length) {
+          const extra = circles[0].cloneNode();
+          svg.append(extra);
+          circles.push(extra);
+        }
+        circles.forEach((c, i) => {
+          c.style.display = pts[i] ? '' : 'none';
+          if (!pts[i]) return;
+          c.setAttribute('cx', pts[i][0]);
+          c.setAttribute('cy', pts[i][1]);
+          c.setAttribute('aria-label', labels[i] + ': ' + count(values[i]) + ' W');
+        });
+        svg.setAttribute('aria-label', description);
+        document
+          .querySelector('.chart-x-labels')
+          .replaceChildren(...labels.map(label => el('span', null, label)));
+        document
+          .querySelectorAll('.chart-y-labels span')
+          .forEach((s, i) => (s.textContent = count((ceiling * (4 - i)) / 4)));
+      }
+      function setHistorySummary(rows) {
+        document.querySelectorAll('.history-summary > div').forEach((div, i) => {
+          div.querySelector('span').textContent = rows[i][0];
+          div.querySelector('strong').textContent = rows[i][1];
+          div.querySelector('strong').className = '';
+        });
+      }
+      // One-time changes that switch sample-period sections over to live wording.
+      function enterLiveMode() {
+        liveMode = true;
+        const q = s => document.querySelector(s);
+        q('.overview-main-label span:nth-child(2)').textContent = 'Current power draw';
+        q('.overview-total span').textContent = 'kW';
+        q('.overview-performance span:nth-child(2)').textContent = 'average per occupied room';
+        q('.overview-sparkline').setAttribute('aria-label', 'Current power draw by floor');
+        get('statCost').nextElementSibling.textContent = 'Per hour at current draw · AUD';
+        get('statTopFloor').nextElementSibling.textContent = 'Largest share of current draw';
+        q('.section-title-row p').textContent = 'Select a room to view its latest power reading.';
+        q('.live-badge').textContent = 'Live readings';
+        const legend = q('.status-legend');
+        legend.append(el('span', 'legend-item'));
+        legend.lastChild.append(el('span', 'legend-dot legend-dot-none'), 'No reading');
+        q('.panel-label').textContent = 'Selected room · Latest reading';
+        const panelLabels = document.querySelectorAll('.panel-info-row span');
+        panelLabels[0].textContent = 'Reading';
+        panelLabels[1].textContent = 'Power draw';
+        panelLabels[3].textContent = 'Reading status';
+        const panelLive = el('div', 'panel-live');
+        panelLive.id = 'panelLive';
+        q('.room-detail-panel .panel-progress').insertAdjacentElement('afterend', panelLive);
+        q('.summary-box .unit').textContent = 'kW';
+        document.querySelectorAll('.summary-box > strong')[0].textContent = 'Top Rooms · Latest';
+        document.querySelectorAll('.summary-box > strong')[1].textContent = 'Room Average';
+        q('#summarySavings + small').textContent = 'Per hour at the selected reduction';
+        q('label[for="periodFilter"]').textContent = 'Room type';
+        q('.filter-heading p').textContent = 'Narrow the floor plan by room type and usage level.';
+        const warning = get('statusFilter').querySelector('option[value="warning"]');
+        if (warning) {
+          warning.value = 'none';
+          warning.textContent = 'No reading';
+        }
+        const comparison = q('.comparison-card');
+        comparison.querySelector('.enhancement-header p').textContent =
+          'Average draw per occupied room, highest room type against lowest.';
+        set('comparisonPeriodBadge', 'Room types');
+        q('.floor-comparison-heading strong').textContent = 'Current draw by floor';
+        q('.efficiency-card .enhancement-header p').textContent =
+          'Usage levels across rooms with a reading.';
+        q('.ranking-card .enhancement-header p').textContent =
+          'Rooms with the highest current power draw.';
+        q('.ranking-card .period-badge').textContent = 'Latest';
+        q('.alerts-card .enhancement-header p').textContent =
+          'Rooms and floors to check, based on the latest readings.';
+        q('.energy-load-panel .card-eyebrow').textContent = 'CURRENT LOAD';
+        q('.energy-load-panel h3').textContent = 'Where the power goes';
+        q('.load-total span').textContent = 'kW';
+        get('opsPeak').previousElementSibling.textContent = 'Recorded';
+        q('.distribution-heading span').textContent = 'Share of current draw';
+        const performance = q('.performance-panel');
+        performance.querySelector('.load-chip').textContent = 'vs building average';
+        performance.querySelector('.performance-copy span').textContent =
+          'Occupied rooms at or below the building average';
+        get('performancePrevious').previousElementSibling.textContent = 'Average per room';
+        get('performanceAverage').previousElementSibling.textContent = 'Per square metre';
+        get('performanceFloor').previousElementSibling.textContent = 'Per guest';
+        performance.querySelector('.performance-caption').textContent =
+          'Uses the latest reading for each occupied room, with room sizes and capacity from hotel_db.';
+        const mix = q('.energy-mix-panel');
+        mix.querySelector('h3').textContent = 'Usage by appliance';
+        mix.querySelector('.network-count').textContent = 'Measured';
+        mix.querySelector('.mini-description').textContent =
+          'Measured draw by appliance across all rooms with a reading.';
+        mix.querySelector('.mix-note').textContent =
+          'From the latest room power readings in hotel_db.';
+        q('.savings-panel .mini-description').textContent =
+          'Try a reduction target and electricity price to estimate hourly savings at the current power draw.';
+      }
+      function applyLiveData(data) {
+        if (!liveMode) enterLiveMode();
+        const rooms = data.rooms;
+        const reporting = rooms.filter(r => r.reading);
+        const floors = [...new Set(rooms.map(r => r.floor))].sort((a, b) => a - b);
+        const floorWatts = floors.map(f =>
+          sum(reporting.filter(r => r.floor === f).map(r => r.reading.totalWatts))
+        );
+        liveTotalWatts = sum(reporting.map(r => r.reading.totalWatts));
+        const leadIndex = floorWatts.indexOf(Math.max(...floorWatts));
+        const leadFloor = floors[leadIndex];
+        const leadShare = liveTotalWatts
+          ? ((100 * floorWatts[leadIndex]) / liveTotalWatts).toFixed(1)
+          : '0';
+        // Average draw per room type (used by the room panel, findings and comparison card).
+        const types = [...new Set(reporting.map(r => r.roomType || 'Other'))]
+          .map(name => {
+            const group = reporting.filter(r => (r.roomType || 'Other') === name);
+            return {
+              name,
+              rooms: group.length,
+              avg: average(group.map(r => r.reading.totalWatts))
+            };
+          })
+          .sort((a, b) => b.avg - a.avg);
+        liveRooms.clear();
+        rooms.forEach(r => liveRooms.set('Room ' + r.roomNumber, { ...r, issues: r.issues || [] }));
+        typeAverages.clear();
+        types.forEach(t => typeAverages.set(t.name, t));
+
+        // Floor plan, rebuilt from hotel_db rooms (keeps the current floor and selected room).
+        const keepFloor = (document.querySelector('.floor-plan[style*="flex"]') || {}).id;
+        const keepRoom = selectedRoom && selectedRoom.dataset.room;
+        const wrapper = document.querySelector('.floor-plan-wrapper');
+        const panel = wrapper.querySelector('.room-detail-panel');
+        wrapper.querySelectorAll('.floor-plan').forEach(f => f.remove());
+        const nav = document.querySelector('.floor-navigation');
+        nav.replaceChildren();
+        floors.forEach(f => {
+          const button = el('button', 'floor-btn', 'Floor ' + f);
+          button.type = 'button';
+          button.id = 'floorBtn' + f;
+          button.addEventListener('click', () => showFloor(f));
+          nav.append(button);
+          const plan = el('div', 'floor-plan');
+          plan.id = 'floor' + f;
+          plan.append(el('div', 'floor-label', 'Floor ' + f));
+          const row = el('div', 'floor-row');
+          rooms
+            .filter(r => r.floor === f)
+            .forEach(r => {
+              const reading = r.reading;
+              const watts = reading ? reading.totalWatts : 0;
+              const level = reading ? usageLevel(watts) : 'none';
+              const block = el('div', 'room-block ' + LEVEL_CLASS[level]);
+              const about = (r.roomType || 'Room') + ' · ' + r.status + '. ';
+              Object.assign(block.dataset, {
+                room: 'Room ' + r.roomNumber,
+                roomType: r.roomType || 'Other',
+                floor: String(f),
+                kwh: String(watts),
+                usageStatus: level,
+                filterStatus: level,
+                sensor: reading ? 'Reading #' + reading.id : 'None recorded',
+                sensorStatus: reading ? 'Reporting' : 'No reading',
+                note: reading
+                  ? about + 'Reading recorded ' + when(reading.recordedAt) + '.'
+                  : r.status === 'occupied'
+                    ? about + 'Occupied but no power reading has been recorded — check the meter.'
+                    : about + 'Not occupied, so no power reading is expected.'
+              });
+              block.append(el('span', null, 'Room ' + r.roomNumber), el('small'));
+              block.querySelector('small').textContent = reading
+                ? count(watts) + ' W'
+                : 'No reading';
+              bindRoom(block);
+              row.append(block);
+            });
+          plan.append(row);
+          wrapper.insertBefore(plan, panel);
+        });
+        showFloor(keepFloor ? Number(keepFloor.replace('floor', '')) : floors[0]);
+        selectedRoom = roomBlocks().find(r => r.dataset.room === keepRoom) || null;
+        if (selectedRoom) showRoomDetails(selectedRoom);
+
+        // Room types for the filter (keeps the current choice).
+        const typeFilter = get('periodFilter');
+        const keepType = typeFilter.value;
+        const allTypes = [...new Set(rooms.map(r => r.roomType || 'Other'))].sort();
+        typeFilter.replaceChildren(
+          new Option('All room types', 'all'),
+          ...allTypes.map(t => new Option(t, t))
+        );
+        typeFilter.value = allTypes.includes(keepType) ? keepType : 'all';
+
+        // Headline figures.
+        const occupied = rooms.filter(r => r.status === 'occupied');
+        const roomAverage = average(reporting.map(r => r.reading.totalWatts));
+        set('overviewPeriod', 'Latest reading');
+        set('statTotal', kw(liveTotalWatts));
+        set('overviewTrend', count(roomAverage) + ' W');
+        get('overviewTrend').classList.remove('overview-trend-increase');
+        set(
+          'overviewPeak',
+          data.readings.lastReadingAt
+            ? 'Recorded ' +
+                when(data.readings.lastReadingAt) +
+                ' · ' +
+                ago(data.readings.lastReadingAt)
+            : 'No readings recorded'
+        );
+        const lo = Math.min(...floorWatts),
+          span = Math.max(1, Math.max(...floorWatts) - lo);
+        document
+          .querySelector('.overview-sparkline polyline')
+          .setAttribute(
+            'points',
+            floorWatts
+              .map(
+                (v, i) =>
+                  ((i * 140) / Math.max(1, floorWatts.length - 1)).toFixed(1) +
+                  ',' +
+                  (29 - ((v - lo) / span) * 22).toFixed(1)
+              )
+              .join(' ')
+          );
+        set('statTopFloor', 'Floor ' + leadFloor);
+        set('summaryTotal', kw(liveTotalWatts));
+        set(
+          'summaryPeriod',
+          'Current draw · ' + reporting.length + ' of ' + rooms.length + ' rooms reporting'
+        );
+        set(
+          'summaryTrend',
+          count(roomAverage) +
+            ' W per occupied room · ' +
+            occupied.filter(r => r.reading).length +
+            ' of ' +
+            occupied.length +
+            ' occupied rooms reporting'
+        );
+
+        // Room type comparison: highest against lowest average draw.
+        const high = types[0] || { name: 'No readings', rooms: 0, avg: 0 };
+        const low =
+          types.length > 1
+            ? types[types.length - 1]
+            : { name: 'Building average', avg: roomAverage };
+        get('comparisonCurrent').previousElementSibling.textContent = high.name;
+        set('comparisonCurrent', count(high.avg) + ' W');
+        get('comparisonPrevious').previousElementSibling.textContent = low.name;
+        set('comparisonPrevious', count(low.avg) + ' W');
+        set('comparisonArrow', '↑');
+        const typeGap = low.avg ? (100 * (high.avg - low.avg)) / low.avg : 0;
+        const change = get('comparisonChange');
+        change.classList.remove('comparison-negative');
+        change.querySelector('strong').textContent = typeGap.toFixed(1) + '% higher';
+        change.querySelector('span').textContent = count(high.avg - low.avg) + ' W more per room';
+
+        // History chart: over time once there are several reading times, otherwise by floor.
+        const historyCard = document.querySelector('.energy-history-card');
+        const timeline = data.history || [];
+        if (timeline.length >= 2) {
+          const values = timeline.map(h => h.totalWatts);
+          const labels = timeline.map(h =>
+            new Date(h.recordedAt).toLocaleString('en-AU', {
+              day: 'numeric',
+              month: 'short',
+              hour: 'numeric'
+            })
+          );
+          historyCard.querySelector('h3').textContent = 'Power Draw Over Time';
+          historyCard.querySelector('.enhancement-header p').textContent =
+            'Building total at each of the last ' + timeline.length + ' reading times.';
+          historyCard.querySelector('.period-badge').textContent = timeline.length + ' readings';
+          drawLiveChart(values, labels, 'Building power draw over the last readings');
+          const first = values[0],
+            last = values[values.length - 1];
+          setHistorySummary([
+            ['Average', count(average(values)) + ' W'],
+            ['Peak time', labels[values.indexOf(Math.max(...values))]],
+            [
+              'Change',
+              (last <= first ? '↓ ' : '↑ ') +
+                (first ? (100 * Math.abs(last - first)) / first : 0).toFixed(1) +
+                '%'
+            ]
+          ]);
+        } else {
+          const labels = floors.map(f => 'Floor ' + f);
+          historyCard.querySelector('h3').textContent = 'Power Draw by Floor';
+          historyCard.querySelector('.enhancement-header p').textContent =
+            'Latest reading per floor. Shows a timeline once readings are recorded at more than one time.';
+          historyCard.querySelector('.period-badge').textContent =
+            'Floors ' + floors[0] + '–' + floors[floors.length - 1];
+          drawLiveChart(floorWatts, labels, 'Current power draw by floor');
+          setHistorySummary([
+            ['Average per floor', count(average(floorWatts)) + ' W'],
+            ['Peak floor', labels[leadIndex]],
+            ['Lowest floor', labels[floorWatts.indexOf(Math.min(...floorWatts))]]
+          ]);
+        }
+
+        // Performance: rooms against the building average, and normalised draw.
+        const atOrBelow = reporting.filter(r => r.reading.totalWatts <= roomAverage).length;
+        const share = reporting.length ? (100 * atOrBelow) / reporting.length : 0;
+        set('performancePercent', Math.round(share) + '%');
+        set('performanceDirection', 'at or below avg');
+        set('performanceDelta', atOrBelow + ' of ' + reporting.length + ' rooms');
+        const topRoom = reporting.reduce(
+          (best, r) => (!best || r.reading.totalWatts > best.reading.totalWatts ? r : best),
+          null
+        );
+        set(
+          'performanceMessage',
+          reporting.length -
+            atOrBelow +
+            ' rooms draw more than the ' +
+            count(roomAverage) +
+            ' W average' +
+            (topRoom ? '; start with Room ' + topRoom.roomNumber + '.' : '.')
+        );
+        get('performanceRing').style.background =
+          'conic-gradient(var(--secondary) 0 ' +
+          share.toFixed(1) +
+          '%,#e2e8f0 ' +
+          share.toFixed(1) +
+          '% 100%)';
+        const sized = reporting.filter(r => r.sizeSqm > 0),
+          seated = reporting.filter(r => r.capacity > 0);
+        set('performancePrevious', count(roomAverage) + ' W');
+        set(
+          'performanceAverage',
+          sized.length
+            ? count(sum(sized.map(r => r.reading.totalWatts)) / sum(sized.map(r => r.sizeSqm))) +
+                ' W/m²'
+            : '—'
+        );
+        set(
+          'performanceFloor',
+          seated.length
+            ? count(sum(seated.map(r => r.reading.totalWatts)) / sum(seated.map(r => r.capacity))) +
+                ' W/guest'
+            : '—'
+        );
+        set('performanceSource', 'Measured · ' + data.source);
+        set(
+          'opsChange',
+          'Across ' +
+            reporting.length +
+            ' occupied rooms · ' +
+            count(roomAverage) +
+            ' W average each'
+        );
+
+        // Per-floor bars (comparison card and operations panel).
+        const maxFloor = Math.max(1, ...floorWatts);
+        const comparisonRows = document.querySelector('.floor-comparison');
+        comparisonRows.querySelectorAll('.floor-compare-row').forEach(n => n.remove());
+        const distribution = document.querySelector('.energy-distribution');
+        distribution.querySelectorAll('.operations-floor-row').forEach(n => n.remove());
+        floors.forEach((f, i) => {
+          const share = liveTotalWatts ? (100 * floorWatts[i]) / liveTotalWatts : 0;
+          const compare = el('div', 'floor-compare-row');
+          const track = el('div', 'floor-compare-track');
+          track.append(el('span'));
+          track.firstChild.style.width = ((100 * floorWatts[i]) / maxFloor).toFixed(1) + '%';
+          compare.append(
+            el('span', null, 'Floor ' + f),
+            track,
+            el('strong', null, count(floorWatts[i]) + ' W')
+          );
+          comparisonRows.append(compare);
+          const opsRow = el('div', 'operations-floor-row');
+          const name = el('div', 'operations-floor-name');
+          name.append(el('strong', null, 'Floor ' + f), el('span', null, share.toFixed(1) + '%'));
+          const opsTrack = el('div', 'operations-floor-track');
+          const fill = el(
+            'div',
+            'floor-chart-fill' + (i === leadIndex ? ' floor-chart-fill-high' : '')
+          );
+          fill.style.width = share.toFixed(1) + '%';
+          opsTrack.append(fill);
+          opsRow.append(
+            name,
+            opsTrack,
+            el('strong', 'operations-floor-value', count(floorWatts[i]) + ' W')
+          );
+          distribution.append(opsRow);
+        });
+
+        // Operations panel.
+        set('sourceStatus', 'Live · ' + data.source);
+        set('opsPeriodBadge', 'Latest reading');
+        set('opsCurrentUsage', kw(liveTotalWatts));
+        set('opsPeak', when(data.readings.lastReadingAt));
+
+        // Measured appliance split.
+        const appliances = [
+          ['Air conditioning', 'mix-hvac', sum(reporting.map(r => r.reading.acWatts))],
+          ['Television', 'mix-light', sum(reporting.map(r => r.reading.tvWatts))],
+          ['Microwave', 'mix-water', sum(reporting.map(r => r.reading.microwaveWatts))]
+        ];
+        const pct = watts => (liveTotalWatts ? (100 * watts) / liveTotalWatts : 0);
+        const meter = document.querySelector('.mix-meter');
+        meter.replaceChildren(...appliances.map(() => el('span')));
+        appliances.forEach(
+          ([, , watts], i) => (meter.children[i].style.width = pct(watts).toFixed(1) + '%')
+        );
+        meter.setAttribute(
+          'aria-label',
+          'Measured power by appliance: ' +
+            appliances
+              .map(([name, , watts]) => name + ' ' + Math.round(pct(watts)) + '%')
+              .join(', ')
+        );
+        get('energyMixRows').replaceChildren(
+          ...appliances.map(([name, dot, watts]) => {
+            const row = el('div', 'mix-row');
+            const label = el('div');
+            label.append(
+              el('strong', null, name),
+              el('small', null, Math.round(pct(watts)) + '% of current draw')
+            );
+            row.append(
+              el('span', 'mix-dot ' + dot),
+              label,
+              el('strong', null, count(watts) + ' W')
+            );
+            return row;
+          })
+        );
+
+        // Areas to review: the most important finding per room, then building-level notes.
+        const alerts = [];
+        [...liveRooms.values()]
+          .map(r => ({ r, found: roomFindings(r) }))
+          .filter(x => x.found.length)
+          .sort(
+            (a, b) =>
+              b.found[0][0] - a.found[0][0] || b.r.reading.totalWatts - a.r.reading.totalWatts
+          )
+          .slice(0, 3)
+          .forEach(({ r, found }) =>
+            alerts.push(['alert-warning', '!', 'Room ' + r.roomNumber, found[0][1]])
+          );
+        if (!alerts.length)
+          roomBlocks()
+            .filter(r => roomStatus(r) === 'high')
+            .sort((a, b) => roomKwh(b) - roomKwh(a))
+            .slice(0, 2)
+            .forEach(r =>
+              alerts.push(['alert-warning', '!', r.dataset.room, roomReading(r) + ' · high draw'])
+            );
+        const endedStays = rooms.filter(r => staleStay(r));
+        if (endedStays.length === 1)
+          alerts.push([
+            'alert-neutral',
+            '!',
+            'Room ' + endedStays[0].roomNumber,
+            'Marked occupied, but its stay has ended · check room status'
+          ]);
+        else if (endedStays.length > 1)
+          alerts.push([
+            'alert-neutral',
+            '!',
+            endedStays.length + ' occupied rooms',
+            'Stay has ended or no booking on record · check room status'
+          ]);
+        alerts.push([
+          'alert-neutral',
+          '!',
+          'Floor ' + leadFloor,
+          leadShare + '% of current draw · largest floor load'
+        ]);
+        const unmetered = occupied.filter(r => !r.reading).length;
+        if (unmetered)
+          alerts.push([
+            'alert-warning',
+            '!',
+            unmetered + ' occupied rooms',
+            'Occupied but no power reading · check meters'
+          ]);
+        else
+          alerts.push([
+            'alert-neutral',
+            'i',
+            'All occupied rooms',
+            occupied.length +
+              ' of ' +
+              occupied.length +
+              ' reporting · ' +
+              (rooms.length - occupied.length) +
+              ' unoccupied rooms not metered'
+          ]);
+        document.querySelector('.alert-list').replaceChildren(
+          ...alerts.map(([kind, icon, title, detail]) => {
+            const row = el('div', 'alert-row ' + kind);
+            const text = el('div');
+            text.append(el('strong', null, title), el('small', null, detail));
+            row.append(el('span', 'alert-icon', icon), text);
+            bindAlertRow(row);
+            return row;
+          })
+        );
+        document.querySelector('.alert-count').textContent = alerts.length + ' Active';
+
+        renderRankings();
+        renderRoomProfile();
+        applyRoomStatusFilter();
+        renderSavings();
+        const top = topRooms()[0];
+        set(
+          'opsInsight',
+          'Floor ' +
+            leadFloor +
+            ' accounts for ' +
+            leadShare +
+            '% of current draw.' +
+            (top
+              ? ' ' + top.dataset.room + ' has the highest reading (' + roomReading(top) + ').'
+              : '')
+        );
+        const button = get('inspectPriorityRoom');
+        if (button && top) {
+          button.textContent = 'Inspect ' + top.dataset.room + ' →';
+          button.dataset.room = top.dataset.room;
+        }
+        const last = data.readings.lastReadingAt;
+        const outOfDate = !last || (Date.now() - new Date(last)) / 3600000 > STALE_HOURS;
+        setSourceBanner(
+          outOfDate ? 'old' : 'live',
+          (outOfDate ? 'Readings are out of date · ' : 'Live readings · ') +
+            'Aiven (' +
+            data.source +
+            ') · ' +
+            reporting.length +
+            ' of ' +
+            rooms.length +
+            ' rooms reporting · latest reading ' +
+            (last ? when(last) + ' (' + ago(last) + ')' : 'none') +
+            ' · checked ' +
+            new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+        );
+        document.querySelector('.live-badge').textContent = outOfDate
+          ? 'Last known readings'
+          : 'Live readings';
+      }
+      async function loadLiveReadings() {
+        if (!liveToken) return;
+        try {
+          const response = await fetch(ENERGY_API, {
+            headers: { Authorization: 'Bearer ' + liveToken }
+          });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok)
+            throw new Error(body.message || 'Request failed (' + response.status + ').');
+          applyLiveData(body);
+        } catch (error) {
+          const reason =
+            error instanceof TypeError
+              ? 'cannot reach the backend on localhost:5000.'
+              : error.message;
+          if (liveMode)
+            setSourceBanner(
+              'stale',
+              'Live refresh failed: ' + reason + ' Showing the last readings loaded.'
+            );
+          else
+            setSourceBanner(
+              'sample',
+              'Showing sample data. Live readings could not be loaded: ' + reason
+            );
+        }
+      }
+      window.addEventListener('message', event => {
+        if (
+          event.origin !== window.location.origin ||
+          !event.data ||
+          event.data.type !== 'gdr-energy-session'
+        )
+          return;
+        liveToken = typeof event.data.token === 'string' ? event.data.token : '';
+        clearInterval(liveTimer);
+        if (!liveToken) {
+          setSourceBanner(
+            'sample',
+            'Showing sample data. Sign in as admin or staff to load live readings.'
+          );
+          return;
+        }
+        loadLiveReadings();
+        liveTimer = setInterval(loadLiveReadings, 60000);
+      });
+      setSourceBanner(
+        'sample',
+        'Showing sample data. Open Energy Usage from the admin dashboard to load live readings.'
+      );
+
       renderRankings();
       renderRoomProfile();
       showFloor(1);

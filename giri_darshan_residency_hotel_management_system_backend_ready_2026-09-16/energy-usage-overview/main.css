@@ -4098,3 +4098,102 @@ body {
 .corridor {
   font-size: 12px;
 }
+
+/* ====================================
+   LIVE READINGS (hotel_db)
+==================================== */
+
+.data-source-banner {
+  margin: 0 0 var(--space-4);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.data-source-banner.is-live {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.data-source-banner.is-sample {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.data-source-banner.is-stale {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.room-nodata {
+  background: repeating-linear-gradient(135deg, #f1f5f9, #f1f5f9 8px, #e2e8f0 8px, #e2e8f0 16px);
+  color: var(--muted);
+}
+
+.legend-dot-none {
+  background: #cbd5e1;
+}
+
+/* Room panel extras (live readings) */
+
+.data-source-banner.is-old {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.panel-live {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel-live .panel-mix {
+  height: 10px;
+  margin: 0 0 2px;
+}
+
+.panel-live-line {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.panel-live-warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.panel-report-toggle {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.panel-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-report-form[hidden] {
+  display: none;
+}
+
+.panel-report-form select,
+.panel-report-form input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 13px;
+  background: white;
+  color: var(--text);
+}
