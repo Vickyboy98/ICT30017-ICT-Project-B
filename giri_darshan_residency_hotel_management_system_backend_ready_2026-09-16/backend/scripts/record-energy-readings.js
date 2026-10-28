@@ -33,12 +33,18 @@ function acFactor(date) {
   return 0.55 + 0.6 * Math.max(0, Math.sin((Math.PI * (hour - 7)) / 15));
 }
 
-function simulate(base, at) {
-  const tvOn = Math.random() < 0.65;
-  const microwaveOn = Math.random() < 0.15;
+// Typical ranges: TV 40-180 W when on, microwave 625-2,000 W only while heating, about
+// 3 W on standby (Electrical Safety Office QLD; standby survey data).
+function simulate(base, previous, at) {
+  // Appliances tend to stay in the state they were in: a TV that was on usually stays on,
+  // and occasionally a microwave is left running into the next reading.
+  const tvWasOn = previous && previous.tv >= 40;
+  const microwaveWasOn = previous && previous.microwave >= 600;
+  const tvOn = Math.random() < (tvWasOn ? 0.8 : 0.35);
+  const microwaveOn = Math.random() < (microwaveWasOn ? 0.35 : 0.08);
   return {
-    ac: Math.round(base.ac * acFactor(at) * between(0.85, 1.15)),
-    tv: tvOn ? Math.round(Math.max(40, base.tv) * between(0.8, 1.2)) : Math.round(between(0, 3)),
+    ac: Math.round(Math.min(2400, base.ac * acFactor(at) * between(0.85, 1.15))),
+    tv: tvOn ? Math.round(Math.min(180, Math.max(40, base.tv) * between(0.8, 1.2))) : Math.round(between(1, 4)),
     microwave: microwaveOn ? Math.round(between(750, 1200)) : Math.round(between(1, 4))
   };
 }
@@ -46,20 +52,30 @@ function simulate(base, at) {
 async function recordBatch(at) {
   // The first reading for each room is the baseline, so repeated runs do not drift.
   const rooms = await query(`
-    SELECT r.id, r.room_number, base.ac_watts, base.tv_watts
+    SELECT r.id, r.room_number, base.ac_watts, base.tv_watts,
+           prev.tv_watts AS prev_tv, prev.microwave_watts AS prev_microwave
     FROM ${db}.rooms r
     LEFT JOIN (
       SELECT u.room_id, u.ac_watts, u.tv_watts FROM ${db}.room_power_usage u
       JOIN (SELECT room_id, MIN(id) AS id FROM ${db}.room_power_usage GROUP BY room_id) first
         ON first.id = u.id
     ) base ON base.room_id = r.id
+    LEFT JOIN (
+      SELECT u.room_id, u.tv_watts, u.microwave_watts FROM ${db}.room_power_usage u
+      JOIN (SELECT room_id, MAX(id) AS id FROM ${db}.room_power_usage GROUP BY room_id) last
+        ON last.id = u.id
+    ) prev ON prev.room_id = r.id
     WHERE r.status = 'occupied'
     ORDER BY r.room_number
   `);
   const rows = rooms.map(r => ({
     roomId: r.id,
     roomNumber: r.room_number,
-    ...simulate({ ac: Number(r.ac_watts) || 700, tv: Number(r.tv_watts) || 80 }, at)
+    ...simulate(
+      { ac: Number(r.ac_watts) || 700, tv: Number(r.tv_watts) || 80 },
+      r.prev_tv === null ? null : { tv: Number(r.prev_tv), microwave: Number(r.prev_microwave) },
+      at
+    )
   }));
   if (!dryRun) {
     for (const row of rows) {

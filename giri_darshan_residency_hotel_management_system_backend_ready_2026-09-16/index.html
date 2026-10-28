@@ -2804,6 +2804,56 @@ const AdminLayout = ({ page, setPage, title, subtitle, children }) => {
   );
 };
 
+// ─── ENERGY SNAPSHOT (admin dashboard) ────────────────────────────────────────
+// Summary of the latest room power readings with a shortcut to the Energy Usage page.
+const EnergySnapshot = ({ setPage }) => {
+  const session = React.useContext(AuthContext);
+  const [data, setData] = React.useState(null);
+  const [failed, setFailed] = React.useState(false);
+  React.useEffect(() => {
+    if (!session?.token) return;
+    fetch('http://localhost:5000/api/energy/hotel-readings', { headers: { Authorization: `Bearer ${session.token}` } })
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then(setData)
+      .catch(() => setFailed(true));
+  }, [session?.token]);
+  const reporting = (data?.rooms || []).filter(r => r.reading);
+  const totalWatts = reporting.reduce((sum, r) => sum + r.reading.totalWatts, 0);
+  const highRooms = reporting.filter(r => r.reading.totalWatts >= 1800).length;
+  const openIssues = (data?.rooms || []).reduce((sum, r) => sum + (r.issues || []).length, 0);
+  const top = reporting.reduce((best, r) => (!best || r.reading.totalWatts > best.reading.totalWatts ? r : best), null);
+  const last = data?.readings?.lastReadingAt;
+  const metrics = [
+    ['Current draw', `${(totalWatts / 1000).toLocaleString('en-AU', { maximumFractionDigits: 1 })} kW`, `${reporting.length} of ${(data?.rooms || []).length} rooms reporting`],
+    ['High usage rooms', String(highRooms), top ? `Highest: Room ${top.roomNumber} · ${top.reading.totalWatts.toLocaleString('en-AU')} W` : 'No readings yet'],
+    ['Open maintenance', String(openIssues), 'Reported room issues'],
+    ['Latest reading', last ? new Date(last).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }) : '—', last ? new Date(last).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : 'Waiting for readings'],
+  ];
+  return (
+    <div className="ga-card" style={{ padding: '20px 22px', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ fontFamily: DS.f.serif, fontSize: 18 }}>Energy Right Now</h3>
+        <Button variant="ghost" size="xs" icon="chevronRight" onClick={() => setPage('energyusage')}>Open Energy Usage</Button>
+      </div>
+      {failed ? (
+        <div style={{ fontSize: 13, color: DS.c.textMuted }}>Energy readings could not be loaded. Check that the backend is running.</div>
+      ) : !data ? (
+        <div style={{ fontSize: 13, color: DS.c.textMuted }}>Loading energy readings…</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          {metrics.map(([label, value, sub]) => (
+            <div key={label}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: DS.c.textMuted, marginBottom: 6 }}>{label}</div>
+              <div style={{ fontFamily: DS.f.serif, fontSize: 24, fontWeight: 600, color: DS.c.text, lineHeight: 1.1 }}>{value}</div>
+              <div style={{ fontSize: 12, color: DS.c.textMuted, marginTop: 4 }}>{sub}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
 const AdminDashboard = ({ setPage }) => {
   const session = React.useContext(AuthContext);
@@ -2839,6 +2889,9 @@ const AdminDashboard = ({ setPage }) => {
           <StatCard label="Monthly Revenue" value={`A$${Number(summary?.total_paid_revenue_inr || 0).toLocaleString('en-AU')}`} sub="Paid records from database" icon="payment" trend={0} color={DS.c.gold} bg={DS.c.navy} />
           <StatCard label="Pending Enquiries" value={String(summary?.open_enquiries || 0)} sub="Open database enquiries" icon="enquiry" trend={0} color={DS.c.warning} />
         </div>
+
+        {/* Energy snapshot */}
+        <EnergySnapshot setPage={setPage} />
 
         {/* Charts Row */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 280px', gap: 18, marginBottom: 24 }}>
@@ -3886,7 +3939,7 @@ const EnergyUsageOverview = ({ setPage }) => {
   return (
     <AdminLayout page="energyusage" setPage={setPage} title="Energy Usage" subtitle="Live readings, sensors and equipment faults">
       <style>{`.live-embed-frame { width: 100%; height: calc(100vh - 60px); min-height: 720px; border: 0; display: block; background: #0B1628; }`}</style>
-      <iframe className="live-embed-frame" src="energy-usage-overview/index.html?v=responsive2" onLoad={e => e.currentTarget.contentWindow.postMessage({type:'gdr-energy-session',token:session?.token || ''},window.location.origin)} title="Energy Usage Overview" />
+      <iframe className="live-embed-frame" src="energy-usage-overview/index.html?v=live3" onLoad={e => e.currentTarget.contentWindow.postMessage({type:'gdr-energy-session',token:session?.token || ''},window.location.origin)} title="Energy Usage Overview" />
     </AdminLayout>
   );
 };

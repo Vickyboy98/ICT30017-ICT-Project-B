@@ -47,13 +47,13 @@ router.get('/hotel-readings', async (req, res, next) => {
              MIN(recorded_at) AS first_reading_at, MAX(recorded_at) AS last_reading_at
       FROM ${db}.room_power_usage
     `);
-    // Building totals for the seven most recent reading times within 24 hours of the latest
+    // Building totals for the seven most recent reading times within 7 days of the latest
     // reading (oldest first), so a gap of weeks between batches does not distort the trend.
     const history = await query(`
       SELECT recorded_at, COUNT(*) AS rooms,
              SUM(tv_watts + ac_watts + microwave_watts) AS total_watts
       FROM ${db}.room_power_usage
-      WHERE recorded_at >= (SELECT MAX(recorded_at) FROM ${db}.room_power_usage) - INTERVAL 24 HOUR
+      WHERE recorded_at >= (SELECT MAX(recorded_at) FROM ${db}.room_power_usage) - INTERVAL 7 DAY
       GROUP BY recorded_at
       ORDER BY recorded_at DESC
       LIMIT 7
@@ -73,6 +73,15 @@ router.get('/hotel-readings', async (req, res, next) => {
     const issues = await query(`
       SELECT id, room_id, issue, status, reported_at FROM ${db}.maintenance
       WHERE status IN ('open', 'in_progress') ORDER BY reported_at DESC
+    `);
+    // Each room's last six readings (oldest first) for the room trend and change arrows.
+    const recent = await query(`
+      SELECT room_id, recorded_at, tv_watts, ac_watts, microwave_watts FROM (
+        SELECT u.*, ROW_NUMBER() OVER (PARTITION BY room_id ORDER BY recorded_at DESC, id DESC) AS n
+        FROM ${db}.room_power_usage u
+      ) ranked
+      WHERE n <= 6
+      ORDER BY room_id, recorded_at
     `);
     const bookingByRoom = new Map(bookings.map(b => [b.room_id, b]));
     res.json({
@@ -117,9 +126,34 @@ router.get('/hotel-readings', async (req, res, next) => {
           issue: i.issue,
           status: i.status,
           reportedAt: i.reported_at
+        })),
+        recent: recent.filter(u => u.room_id === r.id).map(u => ({
+          recordedAt: u.recorded_at,
+          microwaveWatts: Number(u.microwave_watts) || 0,
+          totalWatts: (Number(u.tv_watts) || 0) + (Number(u.ac_watts) || 0) + (Number(u.microwave_watts) || 0)
         }))
       }))
     });
+  } catch (error) { next(error); }
+});
+
+// Mark a maintenance issue as resolved (or back in progress) from the energy dashboard.
+router.patch('/hotel-maintenance/:id', async (req, res, next) => {
+  try {
+    const db = '`' + HOTEL_ENERGY_DB + '`';
+    const id = Number(req.params.id);
+    const { status } = req.body;
+    if (!Number.isSafeInteger(id) || id < 1 || !['open', 'in_progress', 'resolved'].includes(status)) {
+      return res.status(400).json({ message: 'Choose a valid issue and status.' });
+    }
+    const result = await query(
+      `UPDATE ${db}.maintenance SET status = :status,
+         resolved_at = IF(:status = 'resolved', CURRENT_TIMESTAMP, NULL)
+       WHERE id = :id`,
+      { id, status }
+    );
+    if (!result.affectedRows) return res.status(404).json({ message: 'Issue not found.' });
+    res.json({ message: status === 'resolved' ? 'Issue marked as resolved.' : 'Issue status updated.' });
   } catch (error) { next(error); }
 });
 

@@ -662,6 +662,9 @@
               </select>
             </div>
             <button class="filter-reset" id="resetFilters" type="button">Reset Filters</button>
+            <button class="filter-reset" hidden id="downloadReadings" type="button">
+              Download readings
+            </button>
           </div>
         </section>
         <!-- PERIOD COMPARISON -->
@@ -689,31 +692,13 @@
                 <span>11 kWh difference</span>
               </div>
             </div>
-            <div class="floor-comparison">
+            <div class="floor-comparison" id="changesPanel">
               <div class="floor-comparison-heading">
-                <strong>Usage by floor</strong>
+                <strong>Biggest changes since the last reading</strong>
                 <span id="comparisonCost">Estimated cost: $34.20</span>
               </div>
-              <div class="floor-compare-row">
-                <span>Floor 1</span>
-                <div class="floor-compare-track">
-                  <span id="floor1Compare" style="width: 24%"></span>
-                </div>
-                <strong id="floor1CompareValue">42 kWh</strong>
-              </div>
-              <div class="floor-compare-row">
-                <span>Floor 2</span>
-                <div class="floor-compare-track">
-                  <span id="floor2Compare" style="width: 100%"></span>
-                </div>
-                <strong id="floor2CompareValue">71 kWh</strong>
-              </div>
-              <div class="floor-compare-row">
-                <span>Floor 3</span>
-                <div class="floor-compare-track">
-                  <span id="floor3Compare" style="width: 82%"></span>
-                </div>
-                <strong id="floor3CompareValue">58 kWh</strong>
+              <div id="changeRows">
+                <p class="change-empty">Room changes appear here once live readings load.</p>
               </div>
             </div>
           </div>
@@ -1080,7 +1065,7 @@
                       min="0.01"
                       step="0.01"
                       type="number"
-                      value="0.20"
+                      value="0.27"
                     />
                   </div>
                 </div>
@@ -1159,7 +1144,8 @@
       const periodLabel = p => (p === 'today' ? 'Today' : p === '30days' ? '30 Days' : '7 Days');
       function tariff() {
         const n = Number(get('tariffInput').value);
-        return Number.isFinite(n) && n > 0 ? Math.min(n, 5) : 0.2;
+        // Default: Victorian Default Offer 2025-26, small business flat rate (CitiPower), incl. GST.
+        return Number.isFinite(n) && n > 0 ? Math.min(n, 5) : 0.27;
       }
       function reduction() {
         return Number(get('reductionRange').value) || 0;
@@ -1721,6 +1707,11 @@
       const liveRooms = new Map();
       const typeAverages = new Map();
       let lastReport = null;
+      let lastLoadedAt = 0;
+      // Used to spot new readings and new review items between refreshes.
+      let previousLatest = null;
+      let previousAlertKeys = new Set();
+      let livePaused = false;
       function usageLevel(watts) {
         return watts >= HIGH_WATTS ? 'high' : watts >= MEDIUM_WATTS ? 'medium' : 'normal';
       }
@@ -1761,10 +1752,14 @@
             found.push([3, 'AC reported faulty but drawing ' + count(reading.acWatts) + ' W']);
           if (/television|\btv\b/.test(issues) && reading.tvWatts >= 50)
             found.push([3, 'TV reported faulty but drawing ' + count(reading.tvWatts) + ' W']);
-          if (reading.microwaveWatts >= 700)
+          // Only flag a microwave when it is still on at the next reading, not a single use.
+          const previous = r.recent[r.recent.length - 2];
+          if (reading.microwaveWatts >= 700 && previous && previous.microwaveWatts >= 700)
             found.push([
               3,
-              'Microwave at ' + count(reading.microwaveWatts) + ' W · likely left running'
+              'Microwave on for 2 readings in a row (' +
+                count(reading.microwaveWatts) +
+                ' W) · likely left running'
             ]);
           if (r.status !== 'occupied' && reading.totalWatts >= 100)
             found.push([3, count(reading.totalWatts) + ' W while ' + r.status]);
@@ -1797,6 +1792,24 @@
         const at = r.reading ? new Date(r.reading.recordedAt) : new Date();
         return r.booking.status === 'checkedout' || new Date(r.booking.checkOut) < at;
       }
+      // Percentage change between a room's last two readings (null when there is only one).
+      function changeSinceLast(r) {
+        const points = r.recent || [];
+        if (points.length < 2) return null;
+        const before = points[points.length - 2].totalWatts,
+          now = points[points.length - 1].totalWatts;
+        return { before, now, pct: before ? (100 * (now - before)) / before : 0 };
+      }
+      async function updateIssue(id, status) {
+        const response = await fetch(API_BASE + '/energy/hotel-maintenance/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + liveToken },
+          body: JSON.stringify({ status })
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || 'Could not update the issue.');
+        return body;
+      }
       async function reportIssue(roomId, issue, description) {
         const response = await fetch(API_BASE + '/energy/hotel-maintenance', {
           method: 'POST',
@@ -1818,6 +1831,52 @@
         const r = liveRooms.get(room.dataset.room);
         if (!r) return;
         const reading = r.reading;
+        // Room trend: the last few readings as a small line, plus the change since the last one.
+        const change = changeSinceLast(r);
+        if (change) {
+          const values = r.recent.map(p => p.totalWatts);
+          const hi = Math.max(...values, 1),
+            lo = Math.min(...values),
+            span = Math.max(1, hi - lo);
+          const svgNS = 'http://www.w3.org/2000/svg';
+          const svg = document.createElementNS(svgNS, 'svg');
+          svg.setAttribute('class', 'panel-trend');
+          svg.setAttribute('viewBox', '0 0 160 36');
+          svg.setAttribute('preserveAspectRatio', 'none');
+          svg.setAttribute('role', 'img');
+          svg.setAttribute(
+            'aria-label',
+            'Last ' + values.length + ' readings: ' + values.map(v => count(v) + ' W').join(', ')
+          );
+          const line = document.createElementNS(svgNS, 'polyline');
+          line.setAttribute(
+            'points',
+            values
+              .map(
+                (v, i) =>
+                  ((i * 156) / (values.length - 1) + 2).toFixed(1) +
+                  ',' +
+                  (32 - ((v - lo) / span) * 28).toFixed(1)
+              )
+              .join(' ')
+          );
+          svg.append(line);
+          const up = change.pct >= 0;
+          box.append(
+            svg,
+            el(
+              'p',
+              'panel-live-line ' + (up ? 'panel-change-up' : 'panel-change-down'),
+              (up ? '▲ ' : '▼ ') +
+                Math.abs(change.pct).toFixed(0) +
+                '% since the last reading (' +
+                count(change.before) +
+                ' W → ' +
+                count(change.now) +
+                ' W)'
+            )
+          );
+        }
         if (reading) {
           const parts = [
             ['AC', reading.acWatts],
@@ -1897,21 +1956,38 @@
         roomFindings(r)
           .filter(([, text]) => !text.includes('% above other '))
           .forEach(([, text]) => box.append(el('p', 'panel-live-line panel-live-warning', text)));
-        r.issues.forEach(i =>
-          box.append(
-            el(
-              'p',
-              'panel-live-line',
-              'Maintenance: ' +
-                i.issue +
-                ' (' +
-                i.status.replace('_', ' ') +
-                ', ' +
-                shortDate(i.reportedAt) +
-                ')'
-            )
-          )
-        );
+        r.issues.forEach(i => {
+          const line = el(
+            'p',
+            'panel-live-line panel-issue',
+            'Maintenance: ' +
+              i.issue +
+              ' (' +
+              i.status.replace('_', ' ') +
+              ', ' +
+              shortDate(i.reportedAt) +
+              ') '
+          );
+          const resolve = el('button', 'text-action', 'Mark resolved');
+          resolve.type = 'button';
+          resolve.addEventListener('click', async () => {
+            resolve.disabled = true;
+            try {
+              await updateIssue(i.id, 'resolved');
+              lastReport = {
+                room: room.dataset.room,
+                text: 'Marked "' + i.issue + '" as resolved.'
+              };
+              loadLiveReadings();
+            } catch (error) {
+              resolve.disabled = false;
+              resolve.textContent =
+                error instanceof TypeError ? 'Cannot reach the backend' : error.message;
+            }
+          });
+          line.append(resolve);
+          box.append(line);
+        });
 
         // Report issue: a small inline form that writes to hotel_db.maintenance.
         const toggle = el('button', 'text-action panel-report-toggle', 'Report issue →');
@@ -1971,17 +2047,195 @@
         });
         box.append(toggle, form, message);
       }
+      // Rooms whose reading moved most since the previous one (shown in the comparison card).
+      function renderChangeRows() {
+        const box = get('changeRows');
+        if (!box) return;
+        const changes = [...liveRooms.values()]
+          .map(r => ({ r, change: changeSinceLast(r) }))
+          .filter(x => x.change && Math.abs(x.change.pct) >= 5)
+          .sort((a, b) => Math.abs(b.change.pct) - Math.abs(a.change.pct))
+          .slice(0, 5);
+        if (!changes.length) {
+          box.replaceChildren(
+            el('p', 'change-empty', 'No big changes yet. Changes show here after the next reading.')
+          );
+          return;
+        }
+        const biggest = Math.max(...changes.map(x => Math.abs(x.change.pct)), 1);
+        box.replaceChildren(
+          ...changes.map(({ r, change }) => {
+            const up = change.pct > 0;
+            const row = el('div', 'floor-compare-row change-row');
+            const track = el('div', 'floor-compare-track');
+            const fill = el('span', up ? 'change-fill-up' : 'change-fill-down');
+            fill.style.width = ((100 * Math.abs(change.pct)) / biggest).toFixed(1) + '%';
+            track.append(fill);
+            row.append(
+              el('span', null, 'Room ' + r.roomNumber),
+              track,
+              el(
+                'strong',
+                up ? 'room-change-up' : 'room-change-down',
+                (up ? '▲ ' : '▼ ') +
+                  Math.abs(change.pct).toFixed(0) +
+                  '% · ' +
+                  count(change.now) +
+                  ' W'
+              )
+            );
+            row.dataset.room = 'Room ' + r.roomNumber;
+            row.setAttribute('role', 'button');
+            row.tabIndex = 0;
+            row.title = count(change.before) + ' W → ' + count(change.now) + ' W';
+            row.addEventListener('click', () => openRoomFromDashboard(row.dataset.room));
+            row.addEventListener('keydown', e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                row.click();
+              }
+            });
+            return row;
+          })
+        );
+      }
+      // Short notice at the bottom of the page, e.g. when new readings arrive.
+      function showToast(text, actionLabel, action) {
+        let toast = get('liveToast');
+        if (!toast) {
+          toast = el('div', 'live-toast');
+          toast.id = 'liveToast';
+          toast.setAttribute('role', 'status');
+          document.body.append(toast);
+        }
+        toast.replaceChildren(el('span', null, text));
+        if (actionLabel) {
+          const button = el('button', 'live-toast-action', actionLabel);
+          button.type = 'button';
+          button.addEventListener('click', () => {
+            toast.classList.remove('is-visible');
+            action();
+          });
+          toast.append(button);
+        }
+        toast.classList.add('is-visible');
+        clearTimeout(showToast.timer);
+        showToast.timer = setTimeout(() => toast.classList.remove('is-visible'), 8000);
+      }
+      // Downloads the rooms currently shown on the floor plan (after filters) as a CSV file.
+      function downloadReadings() {
+        const cell = value => {
+          const text = value === null || value === undefined ? '' : String(value);
+          return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+        };
+        const rows = [
+          [
+            'Room',
+            'Floor',
+            'Room type',
+            'Room status',
+            'AC (W)',
+            'TV (W)',
+            'Microwave (W)',
+            'Total (W)',
+            'Change since last reading (%)',
+            'Recorded at'
+          ]
+        ];
+        roomBlocks()
+          .filter(block => !block.classList.contains('room-filtered-out'))
+          .forEach(block => {
+            const r = liveRooms.get(block.dataset.room);
+            if (!r) return;
+            const reading = r.reading;
+            const change = changeSinceLast(r);
+            rows.push([
+              'Room ' + r.roomNumber,
+              r.floor,
+              r.roomType,
+              r.status,
+              reading ? reading.acWatts : '',
+              reading ? reading.tvWatts : '',
+              reading ? reading.microwaveWatts : '',
+              reading ? reading.totalWatts : '',
+              change ? change.pct.toFixed(1) : '',
+              reading ? new Date(reading.recordedAt).toLocaleString('en-AU') : ''
+            ]);
+          });
+        const csv = rows.map(row => row.map(cell).join(',')).join('\r\n');
+        const link = el('a');
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+        // Local date and time, e.g. 202610281449 for 28 Oct 2026, 2:49 pm.
+        const now = new Date();
+        const stamp = [
+          now.getFullYear(),
+          now.getMonth() + 1,
+          now.getDate(),
+          now.getHours(),
+          now.getMinutes()
+        ]
+          .map((n, i) => (i ? String(n).padStart(2, '0') : String(n)))
+          .join('');
+        link.download = 'energy-readings-' + stamp + '.csv';
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        showToast('Downloaded ' + (rows.length - 1) + ' rooms.');
+      }
       function setSourceBanner(kind, text) {
         let banner = get('dataSourceBanner');
         if (!banner) {
           banner = el('div', 'data-source-banner');
           banner.id = 'dataSourceBanner';
-          banner.setAttribute('role', 'status');
+          const message = el('span', 'banner-text');
+          message.setAttribute('role', 'status');
+          const updated = el('span', 'banner-updated');
+          updated.id = 'bannerUpdated';
+          const refresh = el('button', 'banner-refresh', 'Refresh');
+          refresh.type = 'button';
+          refresh.id = 'refreshReadings';
+          refresh.addEventListener('click', async () => {
+            refresh.disabled = true;
+            refresh.textContent = 'Refreshing…';
+            await loadLiveReadings();
+            refresh.disabled = false;
+            refresh.textContent = 'Refresh';
+          });
+          // Pause stops the 30-second auto refresh (handy while presenting a specific view).
+          const pause = el('button', 'banner-refresh', 'Pause updates');
+          pause.type = 'button';
+          pause.id = 'pauseReadings';
+          pause.addEventListener('click', () => {
+            livePaused = !livePaused;
+            pause.textContent = livePaused ? 'Resume updates' : 'Pause updates';
+            if (!livePaused) loadLiveReadings();
+            updateBannerAge();
+          });
+          banner.append(message, updated, refresh, pause);
           document.querySelector('.top-bar').insertAdjacentElement('afterend', banner);
         }
         banner.className = 'data-source-banner is-' + kind;
-        banner.textContent = text;
+        banner.querySelector('.banner-text').textContent = text;
+        get('refreshReadings').hidden = !liveToken;
+        get('pauseReadings').hidden = !liveToken;
+        updateBannerAge();
       }
+      // "Updated 20 s ago": how long since the dashboard last loaded readings.
+      function updateBannerAge() {
+        const label = get('bannerUpdated');
+        if (!label) return;
+        if (!lastLoadedAt) {
+          label.textContent = '';
+          return;
+        }
+        const seconds = Math.round((Date.now() - lastLoadedAt) / 1000);
+        label.textContent =
+          'Updated ' +
+          (seconds < 60 ? seconds + ' s ago' : Math.round(seconds / 60) + ' min ago') +
+          (livePaused ? ' · paused' : '');
+      }
+      setInterval(updateBannerAge, 5000);
       // Watt averages are shown as whole numbers.
       const average = values => (values.length ? Math.round(sum(values) / values.length) : 0);
       // Same geometry as renderHistory, for any number of points (W instead of kWh).
@@ -2054,6 +2308,9 @@
         panelLabels[0].textContent = 'Reading';
         panelLabels[1].textContent = 'Power draw';
         panelLabels[3].textContent = 'Reading status';
+        const download = get('downloadReadings');
+        download.hidden = false;
+        download.addEventListener('click', downloadReadings);
         const panelLive = el('div', 'panel-live');
         panelLive.id = 'panelLive';
         q('.room-detail-panel .panel-progress').insertAdjacentElement('afterend', panelLive);
@@ -2072,7 +2329,6 @@
         comparison.querySelector('.enhancement-header p').textContent =
           'Average draw per occupied room, highest room type against lowest.';
         set('comparisonPeriodBadge', 'Room types');
-        q('.floor-comparison-heading strong').textContent = 'Current draw by floor';
         q('.efficiency-card .enhancement-header p').textContent =
           'Usage levels across rooms with a reading.';
         q('.ranking-card .enhancement-header p').textContent =
@@ -2130,7 +2386,13 @@
           })
           .sort((a, b) => b.avg - a.avg);
         liveRooms.clear();
-        rooms.forEach(r => liveRooms.set('Room ' + r.roomNumber, { ...r, issues: r.issues || [] }));
+        rooms.forEach(r =>
+          liveRooms.set('Room ' + r.roomNumber, {
+            ...r,
+            issues: r.issues || [],
+            recent: r.recent || []
+          })
+        );
         typeAverages.clear();
         types.forEach(t => typeAverages.set(t.name, t));
 
@@ -2179,6 +2441,20 @@
               block.querySelector('small').textContent = reading
                 ? count(watts) + ' W'
                 : 'No reading';
+              // Change arrow against the previous reading (ignores changes under 5%).
+              const change = changeSinceLast(r);
+              if (change && Math.abs(change.pct) >= 5) {
+                const arrow = el(
+                  'em',
+                  'room-change ' + (change.pct > 0 ? 'room-change-up' : 'room-change-down'),
+                  change.pct > 0 ? ' ▲' : ' ▼'
+                );
+                arrow.title =
+                  (change.pct > 0 ? 'Up ' : 'Down ') +
+                  Math.abs(change.pct).toFixed(0) +
+                  '% since the last reading';
+                block.querySelector('small').append(arrow);
+              }
               bindRoom(block);
               row.append(block);
             });
@@ -2359,24 +2635,13 @@
             ' W average each'
         );
 
-        // Per-floor bars (comparison card and operations panel).
-        const maxFloor = Math.max(1, ...floorWatts);
-        const comparisonRows = document.querySelector('.floor-comparison');
-        comparisonRows.querySelectorAll('.floor-compare-row').forEach(n => n.remove());
+        renderChangeRows();
+
+        // Per-floor bars in the operations panel.
         const distribution = document.querySelector('.energy-distribution');
         distribution.querySelectorAll('.operations-floor-row').forEach(n => n.remove());
         floors.forEach((f, i) => {
           const share = liveTotalWatts ? (100 * floorWatts[i]) / liveTotalWatts : 0;
-          const compare = el('div', 'floor-compare-row');
-          const track = el('div', 'floor-compare-track');
-          track.append(el('span'));
-          track.firstChild.style.width = ((100 * floorWatts[i]) / maxFloor).toFixed(1) + '%';
-          compare.append(
-            el('span', null, 'Floor ' + f),
-            track,
-            el('strong', null, count(floorWatts[i]) + ' W')
-          );
-          comparisonRows.append(compare);
           const opsRow = el('div', 'operations-floor-row');
           const name = el('div', 'operations-floor-name');
           name.append(el('strong', null, 'Floor ' + f), el('span', null, share.toFixed(1) + '%'));
@@ -2446,9 +2711,22 @@
             (a, b) =>
               b.found[0][0] - a.found[0][0] || b.r.reading.totalWatts - a.r.reading.totalWatts
           )
-          .slice(0, 3)
+          .slice(0, 2)
           .forEach(({ r, found }) =>
             alerts.push(['alert-warning', '!', 'Room ' + r.roomNumber, found[0][1]])
+          );
+        // Open maintenance issues (newest first), so reported problems stay visible until resolved.
+        [...liveRooms.values()]
+          .flatMap(r => r.issues.map(i => ({ r, i })))
+          .sort((a, b) => new Date(b.i.reportedAt) - new Date(a.i.reportedAt))
+          .slice(0, 2)
+          .forEach(({ r, i }) =>
+            alerts.push([
+              'alert-neutral',
+              'i',
+              'Room ' + r.roomNumber,
+              'Maintenance: ' + i.issue + ' · ' + i.status.replace('_', ' ')
+            ])
           );
         if (!alerts.length)
           roomBlocks()
@@ -2473,12 +2751,6 @@
             endedStays.length + ' occupied rooms',
             'Stay has ended or no booking on record · check room status'
           ]);
-        alerts.push([
-          'alert-neutral',
-          '!',
-          'Floor ' + leadFloor,
-          leadShare + '% of current draw · largest floor load'
-        ]);
         const unmetered = occupied.filter(r => !r.reading).length;
         if (unmetered)
           alerts.push([
@@ -2487,7 +2759,13 @@
             unmetered + ' occupied rooms',
             'Occupied but no power reading · check meters'
           ]);
-        else
+        alerts.push([
+          'alert-neutral',
+          '!',
+          'Floor ' + leadFloor,
+          leadShare + '% of current draw · largest floor load'
+        ]);
+        if (!unmetered)
           alerts.push([
             'alert-neutral',
             'i',
@@ -2499,6 +2777,8 @@
               (rooms.length - occupied.length) +
               ' unoccupied rooms not metered'
           ]);
+        // Keep the list short: the most important items come first.
+        alerts.splice(6);
         document.querySelector('.alert-list').replaceChildren(
           ...alerts.map(([kind, icon, title, detail]) => {
             const row = el('div', 'alert-row ' + kind);
@@ -2532,6 +2812,32 @@
           button.textContent = 'Inspect ' + top.dataset.room + ' →';
           button.dataset.room = top.dataset.room;
         }
+        // New readings since the last refresh: summarise what moved and what is new to review.
+        const latest = data.readings.lastReadingAt ? String(data.readings.lastReadingAt) : null;
+        const alertKeys = new Set(
+          alerts.map(a => a[2] + '|' + a[3].split(' · ')[0].replace(/[\d,.%()]+/g, ''))
+        );
+        if (previousLatest && latest && latest !== previousLatest) {
+          const moved = [...liveRooms.values()]
+            .map(changeSinceLast)
+            .filter(c => c && Math.abs(c.pct) >= 5);
+          const ups = moved.filter(c => c.pct > 0).length;
+          const fresh = [...alertKeys].filter(k => !previousAlertKeys.has(k)).length;
+          showToast(
+            'New readings at ' +
+              new Date(latest).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }) +
+              ' · ' +
+              ups +
+              ' rooms up, ' +
+              (moved.length - ups) +
+              ' down' +
+              (fresh ? ' · ' + fresh + ' new to review' : ''),
+            'See changes',
+            () => get('changesPanel').scrollIntoView({ behavior: 'smooth', block: 'center' })
+          );
+        }
+        previousLatest = latest;
+        previousAlertKeys = alertKeys;
         const last = data.readings.lastReadingAt;
         const outOfDate = !last || (Date.now() - new Date(last)) / 3600000 > STALE_HOURS;
         setSourceBanner(
@@ -2544,9 +2850,7 @@
             ' of ' +
             rooms.length +
             ' rooms reporting · latest reading ' +
-            (last ? when(last) + ' (' + ago(last) + ')' : 'none') +
-            ' · checked ' +
-            new Date().toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+            (last ? when(last) + ' (' + ago(last) + ')' : 'none')
         );
         document.querySelector('.live-badge').textContent = outOfDate
           ? 'Last known readings'
@@ -2561,6 +2865,7 @@
           const body = await response.json().catch(() => ({}));
           if (!response.ok)
             throw new Error(body.message || 'Request failed (' + response.status + ').');
+          lastLoadedAt = Date.now();
           applyLiveData(body);
         } catch (error) {
           const reason =
@@ -2596,7 +2901,7 @@
           return;
         }
         loadLiveReadings();
-        liveTimer = setInterval(loadLiveReadings, 60000);
+        liveTimer = setInterval(() => livePaused || loadLiveReadings(), 30000);
       });
       setSourceBanner(
         'sample',
